@@ -1,6 +1,35 @@
 # fish
 FISH (Funny sImple distributed system with rSH through sSH)
 
+# how to run
+- make
+- output
+```txt
+python3 fish.py
+['/data01/cheoljoo.lee/code/fish', '/usr/lib/python38.zip', '/usr/lib/python3.8', '/usr/lib/python3.8/lib-dynload', '/data01/cheoljoo.lee/code/problemSolving/2022/a/lib/python3.8/site-packages']
+the simple distributed compile environment remotely
+input:
+recommend: register  enable  disable  list  run  test
+
+input:r
+recommend: register  run
+recommend: (command) register - registration command (id , host , passwd , etc)
+recommend: (command) run - execute command with quoted string
+
+input:ru
+
+
+recommend: <CR>
+recommend: (argument) run - execution string ex) "cd HOME; ls -al"
+
+input:run "cd HOME; ls -al"
+
+ RETURN
+cmd=[run "cd HOME; ls -al"
+]
+```
+  - rule.data.py : readable database
+
 # TODO
 - ssh
     - If a command is specified, it is executed on the remote host instead of a login shell.
@@ -39,6 +68,8 @@ FISH (Funny sImple distributed system with rSH through sSH)
     - 출처: https://proni.tistory.com/8 [Programmer Leni 🤪:티스토리]
 - 가상환경 기존과 같이 한꺼번에 깔기
     - virtualenv 이용후 다음을 하여 모든 python package설치
+        - sudo apt install virtualenv
+        - sudo apt install python3-pip
     - pip3 freeze > requirements.txt
     - pip3 install -r requirements.txt
 - 환경 설정과 실행 부분을 나누어야 한다. 
@@ -56,4 +87,17 @@ FISH (Funny sImple distributed system with rSH through sSH)
         - fish안에 py로 만들어 수행하도록하고
         - tiger-desktop등도 여기서 받고 compile 한다. 이후 image도 가져오면 된다. 
         - tcmd 로 설치 할수 있어야 한다.
-- 이렇게 하면 혹시 v
+- tiger / tiger01 / lotto645 /  ci 는 알아보는 중!
+- remote
+    - register [name] [id] [host] [passwd] [get directory_path from ~ ]
+        - save csv file & read from this file
+        - id,host,passwd,directory,enable
+    - deregister : list -> choose
+    - enable : list -> choose
+    - disable : list -> choose
+    - list
+    - cmd [name] [command]
+        - we should store various *.sh files to do different works in FISH.
+- fish.py로 따로 갈것 : shell에서 tcmd remote일때 remote.py를 실행시켜주는 것으로 한다. 
+- curl    http://tiger.lge.com/AutoTest_Cmd/tiger_common_cmd.sh  -f  --output     tiger_common_cmd.sh
+    - tiger_common_cmd.sh
