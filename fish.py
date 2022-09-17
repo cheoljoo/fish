@@ -72,6 +72,7 @@ class CiscoStyleCli:
         tmp = self.addArgument(tmp,'passwd','str',"", "password")
         tmp = self.addArgument(tmp,'directory','str',"", "output directory")
         tmp = self.addArgument(tmp,'email','str',"", "email address")
+        tmp = self.addArgument(tmp,'command','str',"", "commands for site")
         enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
         tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","listTable")
         disableCmd = self.addCmd(self.remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
@@ -83,7 +84,7 @@ class CiscoStyleCli:
         tmp = self.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
         # test [return]
         # test sldd hmi 4 5 [return]
-        testCmd = self.addCmd(self.remoteCmd,'test','command',"", "test command example")
+        testCmd = self.addCmd(self.remoteCmd,'test','command',"returnable", "test : send command ls -al for each server")
         twoskipCmd = self.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
         threeCmd = self.addCmd(twoskipCmd ,'three','command',"", "three follows test")
         slddCmd = self.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
@@ -346,7 +347,7 @@ class CiscoStyleCli:
                 if ord(c) == 8 or ord(c) == 127 :  # backspace 8:linux terminal ,  127:vscode terminal
                     if len(self.cmd) > 0:
                         print('\b \b',end="",flush=True)
-                        if self.cmd[-1] == '"':
+                        if self.cmd[-1] == '"' and len(self.cmd) >= 2 and self.cmd[-2] != "\\":
                             if quoteFlag == False:
                                 quoteFlag = True
                             else :
@@ -412,7 +413,7 @@ class RemoteCommand :
         if csvfile:
             self.csvfile = csvfile
         self.debug = debug
-        self.fieldnames = ['name','id','host','passwd','directory','email','enable']
+        self.fieldnames = ['name','id','host','passwd','directory','email','command','enable']
         self.list = []
         if csvfile and os.path.exists(csvfile):
             with open(csvfile, "r" , newline='') as csvfd:
@@ -436,8 +437,12 @@ class RemoteCommand :
             for row in self.list:
                 writer.writerow(row)
         
-    def run(self):
-        pass
+    def test(self):
+        print('\n'*3)
+        for v in self.list:
+            s = "sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' ' + v['command']
+            print(s)
+            os.system(s)
 
     def listTable(self):
         print()
@@ -483,6 +488,8 @@ if (__name__ == "__main__"):
         elif "register" == retValue['__return__'][:len('register')]:
             rc.appendData(retValue)
             rc.dataWrite()
+        elif "test" == retValue['__return__'].strip():
+            rc.test()
         print("cmd=[",retValue['__return__'],"]",sep="")
         print("retValue:",retValue)
     
