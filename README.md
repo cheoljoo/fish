@@ -101,3 +101,9 @@ cmd=[run "cd HOME; ls -al"
 - fish.py로 따로 갈것 : shell에서 tcmd remote일때 remote.py를 실행시켜주는 것으로 한다. 
 - curl    http://tiger.lge.com/AutoTest_Cmd/tiger_common_cmd.sh  -f  --output     tiger_common_cmd.sh
     - tiger_common_cmd.sh
+
+
+- implement the choose , list function
+    - 각기 command에 대해서 함수를 정의한다. 이 함수는 외부에 있는 함수이다. class에 있지 않음
+    - ciscoCLI class에서는 정해진 함수를 수행한다. 주로 list를 하는 것이다. 거기서 값을 return하면 그 값을 받아야 한다. 
+    - table을 보고 해당 값을 처리해야한다. 

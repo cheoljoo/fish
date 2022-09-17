@@ -7,7 +7,7 @@
 import datetime
 import re
 import argparse
-# from collections import defaultdict
+from collections import defaultdict
 import os
 import glob
 import csv
@@ -45,7 +45,7 @@ class CiscoStyleCli:
     ch = c.getCh()
     bool = c.setCliRule()
     """
-    def addCmd(self,root,command,type,desc):
+    def addCmd(self,root,command,type,returnable,desc):
         """ 
         root['cmd'][command]['type'] = type
         root['cmd'][command]['cmd'] = {} # if you need more command
@@ -54,10 +54,14 @@ class CiscoStyleCli:
         if 'cmd' not in root:
             root['cmd'] = {}
         root['cmd'][command] = {}
-        root['cmd'][command]['type'] = type
+        if type:
+            root['cmd'][command]['type'] = type
+        else :
+            root['cmd'][command]['type'] = 'command'
+        root['cmd'][command]['returnable'] = returnable
         root['cmd'][command]['desc'] = desc
         return root['cmd'][command]
-    def addArgument(self,root,name,type,desc):
+    def addArgument(self,root,name,type,returnable,desc):
         """ 
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
@@ -68,8 +72,8 @@ class CiscoStyleCli:
         root['cmd'][name] = {}
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
+        root['cmd'][name]['returnable'] = returnable
         root['cmd'][name]['desc'] = desc
-
         # if 'arguments' not in root:
         #     root['arguments'] = []
         # root['arguments'].append({'name':name,'type':type})
@@ -83,31 +87,31 @@ class CiscoStyleCli:
             self.checkRule(rule)
             self.remoteCmd = rule
             return
-        self.remoteCmd = {}
+        self.remoteCmd = defaultdict()
         # register CL cheoljoo.lee lotto645.com akstp! ./desktop/image cheoljoo.lee@gmail.com [return]
-        registerCmd = self.addCmd(self.remoteCmd,'register','command',"registration command (id , host , passwd , etc)")
-        tmp = self.addArgument(registerCmd,'name','str' , "system nickname ")
-        tmp = self.addArgument(tmp,'id','str',"login id")
-        tmp = self.addArgument(tmp,'host','str',"hostname")
-        tmp = self.addArgument(tmp,'passwd','str',"password")
-        tmp = self.addArgument(tmp,'directory','str',"output directory")
-        tmp = self.addArgument(tmp,'email','str',"email address")
-        enableCmd = self.addCmd(self.remoteCmd,'enable','command',"change to enable status : you can use this system")
-        tmp = self.addArgument(enableCmd,'choose','choose',"choose number from the list")
-        disableCmd = self.addCmd(self.remoteCmd,'disable','command',"change to disable status : you can not use this system")
-        tmp = self.addArgument(disableCmd,'choose','choose',"choose number from the list")
+        registerCmd = self.addCmd(self.remoteCmd,'register','command',"returnable","registration command (id , host , passwd , etc)")
+        tmp = self.addArgument(registerCmd,'name','str' , "", "system nickname ")
+        tmp = self.addArgument(tmp,'id','str',"", "login id")
+        tmp = self.addArgument(tmp,'host','str',"", "hostname")
+        tmp = self.addArgument(tmp,'passwd','str',"returnable", "password")
+        tmp = self.addArgument(tmp,'directory','str',"", "output directory")
+        tmp = self.addArgument(tmp,'email','str',"", "email address")
+        enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
+        tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list")
+        disableCmd = self.addCmd(self.remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
+        tmp = self.addArgument(disableCmd,'choose','int',"", "choose number from the list")
         # list [return] : no arguments
-        listCmd = self.addCmd(self.remoteCmd,'list','command',"show system list")
+        listCmd = self.addCmd(self.remoteCmd,'list','command',"returnable", "show system list")
         # cmd "ls -al \"*.sh\" ; ls "
-        runCmd = self.addCmd(self.remoteCmd,'run','command',"execute command with quoted string")
-        tmp = self.addArgument(runCmd,'run','quotestr',"execution string ex) \"cd HOME; ls -al\"")
+        runCmd = self.addCmd(self.remoteCmd,'run','command',"", "execute command with quoted string")
+        tmp = self.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
         # test [return]
         # test sldd hmi 4 5 [return]
-        testCmd = self.addCmd(self.remoteCmd,'test','command',"test command example")
-        slddCmd = self.addCmd(testCmd ,'sldd','',"sldd follows test")
-        hmiCmd = self.addCmd(slddCmd ,'hmi','',"hmi follows sldd")
-        tmp = self.addArgument(hmiCmd,'first','int',"need to input with first integer")
-        tmp = self.addArgument(tmp,'second','int',"need to input with second integer")
+        testCmd = self.addCmd(self.remoteCmd,'test','command',"", "test command example")
+        slddCmd = self.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
+        hmiCmd = self.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
+        tmp = self.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
+        tmp = self.addArgument(tmp,'second','int',"", "need to input with second integer")
         
         if self.debug :
             print("remoteCmd:",self.remoteCmd)
@@ -137,6 +141,8 @@ class CiscoStyleCli:
         check whether this cmd is right
         return the location from rootCmd following cmd  for guiding current and next arguments
         """
+        retValue = {}
+        retCmdList = []
         words = cmd.split(' ')
         if cmd == "":
             words = []
@@ -163,9 +169,7 @@ class CiscoStyleCli:
                 print(flush=True)
                 print(flush=True)
                 print(flush=True)
-                if ('type' in root and root['type'] == 'command') :
-                    print('recommend: <CR>')
-                elif 'cmd' not in root:
+                if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
                     print('recommend: <CR>',flush=True)
                 if 'cmd' in root:
                     for s in root['cmd'].keys():
@@ -198,6 +202,10 @@ class CiscoStyleCli:
                 if focus:
                     newCmd += v + " "
                     root = cmdRoot[focus]
+                    if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
+                        retValue[focus] = v
+                    else:
+                        retCmdList.append(v)
                 else :
                     if len(matched) == 0:
                         pass
@@ -205,6 +213,10 @@ class CiscoStyleCli:
                         focus = matched[0]
                         newCmd += matched[0] + " "
                         root = cmdRoot[matched[0]]
+                        if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
+                            retValue[focus] = v
+                        else:
+                            retCmdList.append(v)
                     else:
                         newCmd += v
                         print()
@@ -221,7 +233,26 @@ class CiscoStyleCli:
         if self.debug :
             print("newCmd:/",newCmd,"/ root: ",root,sep="")
         self.cmd = newCmd
-        return (root,lastWord)
+        # check auto completion for following order
+        while True:
+            if 'cmd' in root:
+                cmdRoot = root['cmd']
+                # print(cmdRoot)
+                # print(cmdRoot.keys())
+                # print(len(cmdRoot.keys()))   
+                t = list(cmdRoot.keys())
+                # print(t[0])
+                if len(t) == 1 and cmdRoot[t[0]]['type'] != 'argument' and cmdRoot[t[0]]['returnable'] != 'returnable' :
+                    self.cmd += t[0] + ' '
+                    retCmdList.append(t[0])
+                    # lastWord = t[0]
+                    root = cmdRoot[t[0]]
+                else :
+                    break
+            else :
+                break
+        retValue['__cmd__'] = retCmdList
+        return (root,lastWord,retValue)
             
     def run(self):
         """ 
@@ -234,7 +265,9 @@ class CiscoStyleCli:
         self.cmd = ""
         quoteFlag = False
         while True:
-            root , lastCmd = self.checkCmd(self.cmd)
+            root , lastCmd , retValue = self.checkCmd(self.cmd)
+            if self.debug:
+                print('lastCmd:', lastCmd , 'retValue:',retValue)
             # get a word
             for i in range(len(lastCmd)):
                 if lastCmd[i] == '"' and i != 0 and lastCmd[i-1] != "\\":
@@ -277,27 +310,45 @@ class CiscoStyleCli:
                         self.cmd += c
                     if c == ' ':
                         break
-                    print(c,end="",flush=True)
-                    self.cmd += c
                     if c == '\n':
-                        print(c, 'RETURN',flush=True)
-                        return self.cmd.replace('\t',' ')
-        return self.cmd.replace('\t',' ')
+                        if self.debug:
+                            print(c, 'RETURN',flush=True)
+                            print("root:",root)
+                            print("cmd:",self.cmd.replace('\t',' '))
+                        retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                        if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
+                            return retValue
+                    else :
+                        print(c,end="",flush=True)
+                        self.cmd += c
+                        
+        retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+        return retValue
 
     def traverseFD(self,f,vv,start:str):
         # print(start," ",file=f)
         if isinstance(vv, dict):
             for k, v in vv.items():
-                self.traverseFD(f,v,start + '[' + k  + ']')
+                self.traverseFD(f,v,start + "['" + k  + "']")
         elif isinstance(vv, (list, tuple)):
             for i, x in enumerate(vv):
                 self.traverseFD(f,x,start + "[list:" + str(i) + "]" )
         else :
-            print(start ,  " =", vv , file=f)
+            print(start ,  " = '''", vv , "'''", sep="", file=f)
 
     def traverseFile(self,filename:str,v,start:str,att):
         with open(filename, att, encoding='utf-8', errors='ignore') as f:
             self.traverseFD(f,v,start)
+
+class RemoteCommand :
+    """ 
+    This Class choose and execute of remote command.
+    Manage the DB (CSV)
+    """
+    def __init__(self):
+        pass
+    def run(self):
+        pass
 
 if (__name__ == "__main__"):
 
@@ -319,8 +370,9 @@ if (__name__ == "__main__"):
     args = parser.parse_args()
 
     csc = CiscoStyleCli(debug = args.debug)
-    cmd = csc.run()
-    print("cmd=[",cmd,"]",sep="")
+    retValue = csc.run()
+    print("cmd=[",retValue['__return__'],"]",sep="")
+    print("retValue:",retValue)
     
     quit()
 
