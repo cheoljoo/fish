@@ -3,32 +3,66 @@ FISH (Funny sImple distributed system with rSH through sSH)
 
 # how to run
 - make
-- output
+    - output
 ```txt
+python3 fish.py
 python3 fish.py
 ['/data01/cheoljoo.lee/code/fish', '/usr/lib/python38.zip', '/usr/lib/python3.8', '/usr/lib/python3.8/lib-dynload', '/data01/cheoljoo.lee/code/problemSolving/2022/a/lib/python3.8/site-packages']
 the simple distributed compile environment remotely
 input:
 recommend: register  enable  disable  list  run  test
 
-input:r
-recommend: register  run
-recommend: (command) register - registration command (id , host , passwd , etc)
-recommend: (command) run - execute command with quoted string
-
-input:ru
+input:re
 
 
 recommend: <CR>
-recommend: (argument) run - execution string ex) "cd HOME; ls -al"
+recommend: (argument) name - system nickname
 
-input:run "cd HOME; ls -al"
+input:register n
 
- RETURN
-cmd=[run "cd HOME; ls -al"
-]
+
+recommend: (argument) id - login id
+
+input:register n i
+
+
+recommend: (argument) host - hostname
+
+input:register n i h
+
+
+recommend: (argument) passwd - password
+
+input:register n i h p
+
+
+recommend: (argument) directory - output directory
+
+input:register n i h p d
+
+
+recommend: (argument) email - email address
+
+input:register n i h p d e
+
+
+recommend: <CR>
+
+input:register n i h p d e cmd=[register n i h p d e]
+retValue: {'name': 'n', 'id': 'i', 'host': 'h', 'passwd': 'p', 'directory': 'd', 'email': 'e', '__cmd__': ['register'], '__return__': 'register n i h p d e'}
 ```
-  - rule.data.py : readable database
+    - return value
+        - ```retValue: {'name': 'n', 'id': 'i', 'host': 'h', 'passwd': 'p', 'directory': 'd', 'email': 'e', '__cmd__': ['register'], '__return__': 'register n i h p d e'}```
+        - each item has each value as dictionary type.
+    - ruleData.py : readable database
+- add running function without parameter
+    - ```
+            enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
+            tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","get")
+
+            csc = CiscoStyleCli(rule = args.rulefile , debug = args.debug)
+            csc.setFunc("get",get)
+      ```
 
 # TODO
 - ssh

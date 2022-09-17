@@ -7,7 +7,7 @@
 import datetime
 import re
 import argparse
-from collections import defaultdict
+# from collections import defaultdict
 import os
 import glob
 import csv
@@ -45,59 +45,34 @@ class CiscoStyleCli:
     ch = c.getCh()
     bool = c.setCliRule()
     """
-    def addCmd(self,root,command,type,returnable,desc):
-        """ 
-        root['cmd'][command]['type'] = type
-        root['cmd'][command]['cmd'] = {} # if you need more command
-        return root['cmd'][command]
-        """
-        if 'cmd' not in root:
-            root['cmd'] = {}
-        root['cmd'][command] = {}
-        if type:
-            root['cmd'][command]['type'] = type
-        else :
-            root['cmd'][command]['type'] = 'command'
-        root['cmd'][command]['returnable'] = returnable
-        root['cmd'][command]['desc'] = desc
-        return root['cmd'][command]
-    def addArgument(self,root,name,type,returnable,desc):
-        """ 
-        root['cmd'][name]['type'] = 'argument'
-        root['cmd'][name]['argument-type'] = type
-        root['cmd'][name]['cmd'] = {} # if you need more command
-        """
-        if 'cmd' not in root:
-            root['cmd'] = {}
-        root['cmd'][name] = {}
-        root['cmd'][name]['type'] = 'argument'
-        root['cmd'][name]['argument-type'] = type
-        root['cmd'][name]['returnable'] = returnable
-        root['cmd'][name]['desc'] = desc
-        # if 'arguments' not in root:
-        #     root['arguments'] = []
-        # root['arguments'].append({'name':name,'type':type})
-        return root['cmd'][name]
     def __init__(self,rule=None,debug=False):
         """ 
         초기화 self.remoteCmd
         """
         self.debug = debug
-        if rule:
-            self.checkRule(rule)
-            self.remoteCmd = rule
+        if rule and os.path.isfile(rule):
+            remoteCmd = {}
+            f = open(rule, 'r')
+            lines = f.readlines()
+            for line in lines:
+                # print(line.strip())
+                exec(line.strip())
+            f.close()
+            print("__init__():remoteCmd:",remoteCmd)
+            self.remoteCmd = remoteCmd
             return
-        self.remoteCmd = defaultdict()
+        self.funcTable = {}
+        self.remoteCmd = {}
         # register CL cheoljoo.lee lotto645.com akstp! ./desktop/image cheoljoo.lee@gmail.com [return]
         registerCmd = self.addCmd(self.remoteCmd,'register','command',"returnable","registration command (id , host , passwd , etc)")
         tmp = self.addArgument(registerCmd,'name','str' , "", "system nickname ")
         tmp = self.addArgument(tmp,'id','str',"", "login id")
         tmp = self.addArgument(tmp,'host','str',"", "hostname")
-        tmp = self.addArgument(tmp,'passwd','str',"returnable", "password")
+        tmp = self.addArgument(tmp,'passwd','str',"", "password")
         tmp = self.addArgument(tmp,'directory','str',"", "output directory")
         tmp = self.addArgument(tmp,'email','str',"", "email address")
         enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
-        tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list")
+        tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","get")
         disableCmd = self.addCmd(self.remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
         tmp = self.addArgument(disableCmd,'choose','int',"", "choose number from the list")
         # list [return] : no arguments
@@ -115,8 +90,50 @@ class CiscoStyleCli:
         
         if self.debug :
             print("remoteCmd:",self.remoteCmd)
-        self.traverseFile("rule.data.py",self.remoteCmd,"remoteCmd","w")
-
+        self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
+        
+    def addCmd(self,root,command,type,returnable,desc,funcname=""):
+        """ 
+        root['cmd'][command]['type'] = type
+        root['cmd'][command]['cmd'] = {} # if you need more command
+        return root['cmd'][command]
+        """
+        if 'cmd' not in root:
+            root['cmd'] = {}
+        root['cmd'][command] = {}
+        if type:
+            root['cmd'][command]['type'] = type
+        else :
+            root['cmd'][command]['type'] = 'command'
+        root['cmd'][command]['returnable'] = returnable
+        root['cmd'][command]['desc'] = desc
+        if funcname :
+            root['cmd'][command]['funcname'] = funcname
+        return root['cmd'][command]
+    def addArgument(self,root,name,type,returnable,desc,funcname=""):
+        """ 
+        root['cmd'][name]['type'] = 'argument'
+        root['cmd'][name]['argument-type'] = type
+        root['cmd'][name]['cmd'] = {} # if you need more command
+        """
+        if 'cmd' not in root:
+            root['cmd'] = {}
+        root['cmd'][name] = {}
+        root['cmd'][name]['type'] = 'argument'
+        root['cmd'][name]['argument-type'] = type
+        root['cmd'][name]['returnable'] = returnable
+        root['cmd'][name]['desc'] = desc
+        # if 'arguments' not in root:
+        #     root['arguments'] = []
+        # root['arguments'].append({'name':name,'type':type})
+        if funcname :
+            root['cmd'][name]['funcname'] = funcname
+        return root['cmd'][name]
+    def setFunc(self,funcname,funcptr):
+        self.funcTable[funcname] = funcptr
+        if self.debug:
+            funcptr()
+        
     def setCliRule(self,rule):
         self.remoteCmd = rule
         
@@ -178,6 +195,9 @@ class CiscoStyleCli:
                         if cmdRoot[s]['type'] != 'argument':
                             t = 'command'
                         print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,flush=True)
+                        if 'funcname' in cmdRoot[s] and cmdRoot[s]['funcname'] in self.funcTable :
+                            t = cmdRoot[s]['funcname']
+                            self.funcTable[t]()
                 break
             lastWord = v
             if 'cmd' in root:
@@ -328,6 +348,7 @@ class CiscoStyleCli:
     def traverseFD(self,f,vv,start:str):
         # print(start," ",file=f)
         if isinstance(vv, dict):
+            print(start ,  " = {}", sep="", file=f)
             for k, v in vv.items():
                 self.traverseFD(f,v,start + "['" + k  + "']")
         elif isinstance(vv, (list, tuple)):
@@ -350,6 +371,11 @@ class RemoteCommand :
     def run(self):
         pass
 
+def get():
+    print()
+    print("NEXT")
+    print()
+
 if (__name__ == "__main__"):
 
     parser = argparse.ArgumentParser(
@@ -366,13 +392,23 @@ if (__name__ == "__main__"):
         type=str,
         default="fish.csv",
         help='csv file with field -  name,login_id,passwd,host,directory,email')
+    parser.add_argument(
+        '--rulefile',
+        metavar="<rulefile>",
+        type=str,
+        default="rule.py",
+        help='python data file to make a command line rule')
 
     args = parser.parse_args()
 
-    csc = CiscoStyleCli(debug = args.debug)
+    csc = CiscoStyleCli(rule = args.rulefile , debug = args.debug)
+    csc.setFunc("get",get)
     retValue = csc.run()
     print("cmd=[",retValue['__return__'],"]",sep="")
     print("retValue:",retValue)
+    
+    # import ruleData
+    # print(ruleData.remoteCmd)
     
     quit()
 
