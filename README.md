@@ -3,16 +3,32 @@ FISH (Funny sImple distributed system with rSH through sSH)
 
 # Class
 - CiscoStyleCli Class
+    - structure
+        - type : command (fixed value) or argument(variant value)
+        - returnable : whether you can end or not although you strike the [return] key.
+        - desc : description for help
+        - prefunc : run this function before reach this command
+        - return func : run this function when you reach this command
     - quit[return] is possbile.  before changing , we can input [return] after spacebar.
     - add running function without parameter. 
         - we can put the function-name at last parameter of addArgument() and addCmd().
         - and we should bind between function-name and real function pointer with setFunc("listTable",rc.listTable)
+    - setCliRule
+        - set user rule
+    - basic command
+        - list : show the command structure
+        - quit : quit from this program
+    - you can not get out from this class when you meet the [returnable] or the end of command although you strke [return] key.
     - output file
         - ruleData.py : rule information
 - RemoteCommand Class
     - add database for user and server
     - input/output file
         - fish.csv : user and server database
+- main
+    - use RemoteCommand Class to run remote works
+    - use CiscoStyleCli Class to get input
+    - set rules for Remotecommand
 
 # how to run
 - make
@@ -155,3 +171,8 @@ retValue: {'name': 'n', 'id': 'i', 'host': 'h', 'passwd': 'p', 'directory': 'd',
     - 각기 command에 대해서 함수를 정의한다. 이 함수는 외부에 있는 함수이다. class에 있지 않음
     - ciscoCLI class에서는 정해진 함수를 수행한다. 주로 list를 하는 것이다. 거기서 값을 return하면 그 값을 받아야 한다. 
     - table을 보고 해당 값을 처리해야한다. 
+
+- list
+    - draw the structure
+- checkStructure
+    - check whether their input structure is right

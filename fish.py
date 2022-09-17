@@ -66,7 +66,7 @@ class CiscoStyleCli:
             print("__init__():remoteCmd:",remoteCmd)
             self.remoteCmd = remoteCmd
             return
-        self.funcTable = {}
+        # self.funcTable = {}
         self.remoteCmd = {}
         # register CL cheoljoo.lee lotto645.com akstp! ./desktop/image cheoljoo.lee@gmail.com [return]
         registerCmd = self.addCmd(self.remoteCmd,'register','command',"","registration command (id , host , passwd , etc)")
@@ -77,34 +77,39 @@ class CiscoStyleCli:
         tmp = self.addArgument(tmp,'directory','str',"", "output directory")
         tmp = self.addArgument(tmp,'email','str',"", "email address")
         tmp = self.addArgument(tmp,'command','str',"", "commands for site")
-        enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
-        tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","listTable")
-        disableCmd = self.addCmd(self.remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
-        tmp = self.addArgument(disableCmd,'choose','int',"", "choose number from the list")
-        # list [return] : no arguments
-        listCmd = self.addCmd(self.remoteCmd,'list','command',"returnable", "show system list")
-        # cmd "ls -al \"*.sh\" ; ls "
-        runCmd = self.addCmd(self.remoteCmd,'run','command',"", "execute command with quoted string")
-        tmp = self.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
-        # test [return]
-        # test sldd hmi 4 5 [return]
-        testCmd = self.addCmd(self.remoteCmd,'test','command',"returnable", "test : send command ls -al for each server")
-        twoskipCmd = self.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
-        threeCmd = self.addCmd(twoskipCmd ,'three','command',"", "three follows test")
-        slddCmd = self.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
-        stopCmd = self.addCmd(slddCmd ,'stop','command',"returnable", "stop follows sldd")
-        helpCmd = self.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
-        hmiCmd = self.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
-        tmp = self.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
-        tmp = self.addArgument(tmp,'second','int',"", "need to input with second integer")
-        quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit")
-        tmp = self.addCmd(quitCmd ,'','command',"", "exit","quit")
+        quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
+        tmp = self.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
+        # # enable : now i do not use it
+        # enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
+        # tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","listTable")
+        # # disable : now i do not use it
+        # disableCmd = self.addCmd(self.remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
+        # tmp = self.addArgument(disableCmd,'choose','int',"", "choose number from the list","listTable")
+        # # list [return] : no arguments
+        # listCmd = self.addCmd(self.remoteCmd,'list','command',"returnable", "show system list")
+        # # cmd "ls -al \"*.sh\" ; ls "
+        # runCmd = self.addCmd(self.remoteCmd,'run','command',"", "execute command with quoted string")
+        # tmp = self.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
+        # # test [return]  <- use it now to check server's status
+        # testCmd = self.addCmd(self.remoteCmd,'test','command',"returnable", "test : send command ls -al for each server")
+        # twoskipCmd = self.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
+        # threeCmd = self.addCmd(twoskipCmd ,'three','command',"", "three follows test")
+        # # test sldd hmi 4 5 [return]
+        # slddCmd = self.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
+        # stopCmd = self.addCmd(slddCmd ,'stop','command',"returnable", "stop follows sldd")
+        # helpCmd = self.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
+        # hmiCmd = self.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
+        # tmp = self.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
+        # tmp = self.addArgument(tmp,'second','int',"", "need to input with second integer")
+        # # run [return]  <- use it now to check server's status
+        # runCmd = self.addCmd(self.remoteCmd,'run','command',"", "run download & compile")
+        # tigerDesktopCmd = self.addCmd(runCmd ,'tiger-desktop','command',"returnable", "download & compile of tiger-desktop")
         
         if self.debug :
             print("remoteCmd:",self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         
-    def addCmd(self,root,command,type,returnable,desc,funcname=""):
+    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None):
         """ 
         root['cmd'][command]['type'] = type
         root['cmd'][command]['cmd'] = {} # if you need more command
@@ -119,10 +124,12 @@ class CiscoStyleCli:
             root['cmd'][command]['type'] = 'command'
         root['cmd'][command]['returnable'] = returnable
         root['cmd'][command]['desc'] = desc
-        if funcname :
-            root['cmd'][command]['funcname'] = funcname
+        if prefunc :
+            root['cmd'][command]['prefunc'] = prefunc
+        if returnfunc :
+            root['cmd'][command]['returnfunc'] = returnfunc
         return root['cmd'][command]
-    def addArgument(self,root,name,type,returnable,desc,funcname=""):
+    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None):
         """ 
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
@@ -138,16 +145,34 @@ class CiscoStyleCli:
         # if 'arguments' not in root:
         #     root['arguments'] = []
         # root['arguments'].append({'name':name,'type':type})
-        if funcname :
-            root['cmd'][name]['funcname'] = funcname
+        if prefunc:
+            root['cmd'][name]['prefunc'] = prefunc
+        if returnfunc:
+            root['cmd'][name]['returnfunc'] = returnfunc
         return root['cmd'][name]
-    def setFunc(self,funcname,funcptr):
-        self.funcTable[funcname] = funcptr
-        if self.debug and funcptr != quit:
-            funcptr()
+    
+    # def setFunc(self,funcname,funcptr):
+    #     self.funcTable[funcname] = funcptr
+    #     if self.debug and funcptr != quit:
+    #         funcptr()
         
     def setCliRule(self,rule):
         self.remoteCmd = rule
+        if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
+            quitCmd = self.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
+            tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
+        if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
+            listCmd = self.addCmd(remoteCmd ,'list','command',"returnable", "exit",returnfunc=self.list)
+            # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
+    
+    def quit(self):
+        print("byebye!!   see you again~~   *^^*")
+        quit()
+    
+    def list(self):
+        print()
+        print("LIST")
+        print()
         
     def getch(self):
         """ 
@@ -182,6 +207,14 @@ class CiscoStyleCli:
                 for s in cmdRoot.keys():
                     print(s," ",end="",flush=True)
                 print(flush=True)
+                for s in cmdRoot.keys():
+                    t = 'argument'
+                    if cmdRoot[s]['type'] != 'argument':
+                        t = 'command'
+                    returnable = ""
+                    if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
+                        returnable = '[returnable]'
+                    print('    recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
         root = self.remoteCmd
         if self.debug:
             print("checkCmd:words:",words)
@@ -217,12 +250,13 @@ class CiscoStyleCli:
                         if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
                             returnable = '[returnable]'
                         print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
-                        if 'funcname' in cmdRoot[s] and cmdRoot[s]['funcname'] in self.funcTable :
-                            t = cmdRoot[s]['funcname']
+                        if 'prefunc' in cmdRoot[s] and cmdRoot[s]['prefunc'] :
+                            t = cmdRoot[s]['prefunc']
+                            print("prefunc",t)
                             if self.debug:
                                 print("funcname:",t)
-                                print(self.funcTable)
-                            self.funcTable[t]()
+                                # print(self.funcTable)
+                            t()
                 if self.debug:
                     print("matchedCount:",matchedCount)
                     print("matchedCommand:",matchedCommand)
@@ -331,6 +365,9 @@ class CiscoStyleCli:
                     print("cmd:",self.cmd.replace('\t',' '))
                 retValue['__return__'] = self.cmd.strip().replace('\t',' ')
                 if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
+                    print('returnfunc')
+                    if 'returnfunc' in root and root['returnfunc']:
+                        root['returnfunc']()
                     return retValue
             # get a word
             for i in range(len(lastCmd)):
@@ -426,7 +463,7 @@ class RemoteCommand :
                     self.list.append(row)
                 if len(self.fieldnames) < len(list(row.keys())):
                     self.fieldnames = list(row.keys())
-
+        
     def appendData(self,rv):
         row = {}
         for f in self.fieldnames:
@@ -434,6 +471,7 @@ class RemoteCommand :
             if f in rv:
                 row[f] = rv[f]
         self.list.append(row)
+        
     def dataWrite(self):
         with open('fish.csv', 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
@@ -441,11 +479,13 @@ class RemoteCommand :
             for row in self.list:
                 writer.writerow(row)
         
-    def test(self):
+    def test(self,onlyEnable=None):
         print('\n'*3)
         for v in self.list:
             s = "sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' ' + v['command']
             print(s)
+            if onlyEnable == True and v['enable'] != 'true':
+                continue
             out = os.popen(s).read()
             print("out:",out)
             outa = out.split('\n')
@@ -473,8 +513,20 @@ class RemoteCommand :
                         v['enable'] = 'false'
             else :
                 v['enable'] = 'false'
-
         self.dataWrite()
+    
+    def getBest(self):
+        best = 100.0
+        bestIdx = -1
+        for i,v in enumerate(self.list):
+            if v['enable'] == 'true':
+                if float(v['cpuUsage']) < best:
+                    bestIdx = i
+                    best = float(v['cpuUsage'])
+        if bestIdx == -1:
+            return (best,None)
+        else:
+            return (best,self.list[bestIdx])
 
     def listTable(self):
         print()
@@ -511,8 +563,50 @@ if (__name__ == "__main__"):
 
     csc = CiscoStyleCli(rule = args.rulefile , debug = args.debug)
     rc = RemoteCommand(csvfile=args.csvfile,debug = args.debug)
-    csc.setFunc("listTable",rc.listTable)
-    csc.setFunc("quit",quit)
+    
+    remoteCmd = {}
+    # register CL cheoljoo.lee lotto645.com akstp! ./desktop/image cheoljoo.lee@gmail.com [return]
+    registerCmd = csc.addCmd(remoteCmd,'register','command',"","registration command (id , host , passwd , etc)")
+    tmp = csc.addArgument(registerCmd,'name','str' , "", "system nickname ")
+    tmp = csc.addArgument(tmp,'id','str',"", "login id")
+    tmp = csc.addArgument(tmp,'host','str',"", "hostname")
+    tmp = csc.addArgument(tmp,'passwd','str',"", "password")
+    tmp = csc.addArgument(tmp,'directory','str',"", "output directory")
+    tmp = csc.addArgument(tmp,'email','str',"", "email address")
+    tmp = csc.addArgument(tmp,'command','str',"", "commands for site")
+    # enable : now i do not use it
+    enableCmd = csc.addCmd(remoteCmd,'enable','command',"", "change to enable status : you can use this system")
+    tmp = csc.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable)
+    # disable : now i do not use it
+    disableCmd = csc.addCmd(remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
+    tmp = csc.addArgument(disableCmd,'choose','int',"", "choose number from the list",prefunc=rc.listTable)
+    # list [return] : no arguments
+    # listCmd = csc.addCmd(remoteCmd,'list','command',"returnable", "show system list")
+    # cmd "ls -al \"*.sh\" ; ls "
+    runCmd = csc.addCmd(remoteCmd,'run','command',"", "execute command with quoted string")
+    tmp = csc.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
+    # test [return]  <- use it now to check server's status
+    testCmd = csc.addCmd(remoteCmd,'test','command',"returnable", "test : send command ls -al for each server")
+    twoskipCmd = csc.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
+    threeCmd = csc.addCmd(twoskipCmd ,'three','command',"", "three follows test")
+    # test sldd hmi 4 5 [return]
+    slddCmd = csc.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
+    stopCmd = csc.addCmd(slddCmd ,'stop','command',"returnable", "stop follows sldd")
+    helpCmd = csc.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
+    hmiCmd = csc.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
+    tmp = csc.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
+    tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer")
+    # quit
+    # quitCmd = csc.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=quit)
+    # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=quit)
+    # run [return]  <- use it now to check server's status
+    runCmd = csc.addCmd(remoteCmd,'run','command',"", "run download & compile")
+    tigerDesktopCmd = csc.addCmd(runCmd ,'tiger-desktop','command',"returnable", "download & compile of tiger-desktop")
+    
+    csc.setCliRule(remoteCmd)
+    # csc.setFunc("listTable",rc.listTable)
+    # csc.setFunc("quit",quit)
+    # TODO : rule을 만들어서 set 해야 한다. csc.setRule(..)
     while True:
         retValue = csc.run()
         if "quit" == retValue['__return__'][:len('quit')]:
@@ -522,6 +616,10 @@ if (__name__ == "__main__"):
             rc.dataWrite()
         elif "test" == retValue['__return__'].strip():
             rc.test()
+        elif "run" == retValue['__cmd__'][0]:
+            rc.test(onlyEnable=True)
+            best,bestv = rc.getBest()
+            print(best , bestv)
         print("cmd=[",retValue['__return__'],"]",sep="")
         print("retValue:",retValue)
     
