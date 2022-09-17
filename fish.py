@@ -35,6 +35,10 @@ dateRe = re.compile('^\s*(?P<date>(?P<year>20[0-9]+)-(?P<month>[0-9]+)-(?P<day>[
 intRe = re.compile('^\s*(?P<ans>[0-9\-\+]+)')
 floatRe = re.compile('^\s*(?P<ans>[0-9\-\+\.]+)')
 wordRe = re.compile('^\s*(?P<ans>[^ \n]+)')
+cpusRe = re.compile('^\s*cpu count:\s*(?P<ans>[0-9\-\+\.]+)')
+cpuUsageRe = re.compile('^\s*CPU usage:\s*(?P<ans>[0-9\-\+\.]+)')
+dfRe = re.compile('^\s*/dev/\S+\s+\S+\s+\S+\s+(?P<ans>[0-9\-\+\.]+[MGT]+)')
+
 
 class CiscoStyleCli:
     """ 
@@ -413,7 +417,7 @@ class RemoteCommand :
         if csvfile:
             self.csvfile = csvfile
         self.debug = debug
-        self.fieldnames = ['name','id','host','passwd','directory','email','command','enable']
+        self.fieldnames = ['name','id','host','passwd','directory','email','command','enable','cpus','cpuUsage','df']
         self.list = []
         if csvfile and os.path.exists(csvfile):
             with open(csvfile, "r" , newline='') as csvfd:
@@ -442,7 +446,35 @@ class RemoteCommand :
         for v in self.list:
             s = "sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' ' + v['command']
             print(s)
-            os.system(s)
+            out = os.popen(s).read()
+            print("out:",out)
+            outa = out.split('\n')
+            v['cpus'] = ""
+            v['cpuUsage'] = ""
+            v['df'] = ""
+            for l in outa:
+                # print(l)
+                grp = cpusRe.search(l)
+                if grp:
+                    v['cpus'] = str(grp.group('ans'))
+                grp = cpuUsageRe.search(l)
+                if grp:
+                    v['cpuUsage'] = str(grp.group('ans'))
+                grp = dfRe.search(l)
+                if grp:
+                    v['df'] = str(grp.group('ans'))
+            if v['cpus'] and v['cpuUsage'] and v['df'] :
+                v['enable'] = 'true'
+                if v['df'][-1] == 'T':
+                    if float(v['df'][:-1]) < 0.15:
+                        v['enable'] = 'false'
+                elif v['df'][-1] == 'G':
+                    if float(v['df'][:-1]) < 150.0:
+                        v['enable'] = 'false'
+            else :
+                v['enable'] = 'false'
+
+        self.dataWrite()
 
     def listTable(self):
         print()
