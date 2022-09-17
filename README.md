@@ -1,6 +1,19 @@
 # fish
 FISH (Funny sImple distributed system with rSH through sSH)
 
+# Class
+- CiscoStyleCli Class
+    - quit[return] is possbile.  before changing , we can input [return] after spacebar.
+    - add running function without parameter. 
+        - we can put the function-name at last parameter of addArgument() and addCmd().
+        - and we should bind between function-name and real function pointer with setFunc("listTable",rc.listTable)
+    - output file
+        - ruleData.py : rule information
+- RemoteCommand Class
+    - add database for user and server
+    - input/output file
+        - fish.csv : user and server database
+
 # how to run
 - make
     - output
@@ -54,7 +67,6 @@ retValue: {'name': 'n', 'id': 'i', 'host': 'h', 'passwd': 'p', 'directory': 'd',
     - return value
         - ```retValue: {'name': 'n', 'id': 'i', 'host': 'h', 'passwd': 'p', 'directory': 'd', 'email': 'e', '__cmd__': ['register'], '__return__': 'register n i h p d e'}```
         - each item has each value as dictionary type.
-    - ruleData.py : readable database
 - add running function without parameter
     - ```
             enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
@@ -63,6 +75,8 @@ retValue: {'name': 'n', 'id': 'i', 'host': 'h', 'passwd': 'p', 'directory': 'd',
             csc = CiscoStyleCli(rule = args.rulefile , debug = args.debug)
             csc.setFunc("get",get)
       ```
+    - ruleData.py : readable command line interface database
+    - fish.csv : readable id_passwd table for each server
 
 # TODO
 - ssh

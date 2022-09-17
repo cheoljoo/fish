@@ -72,7 +72,7 @@ class CiscoStyleCli:
         tmp = self.addArgument(tmp,'directory','str',"", "output directory")
         tmp = self.addArgument(tmp,'email','str',"", "email address")
         enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
-        tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","get")
+        tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","listTable")
         disableCmd = self.addCmd(self.remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
         tmp = self.addArgument(disableCmd,'choose','int',"", "choose number from the list")
         # list [return] : no arguments
@@ -87,11 +87,13 @@ class CiscoStyleCli:
         hmiCmd = self.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
         tmp = self.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
         tmp = self.addArgument(tmp,'second','int',"", "need to input with second integer")
+        quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit")
+        tmp = self.addCmd(quitCmd ,'','command',"", "exit","quit")
         
         if self.debug :
             print("remoteCmd:",self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
-        
+        self.c = ''
     def addCmd(self,root,command,type,returnable,desc,funcname=""):
         """ 
         root['cmd'][command]['type'] = type
@@ -131,7 +133,7 @@ class CiscoStyleCli:
         return root['cmd'][name]
     def setFunc(self,funcname,funcptr):
         self.funcTable[funcname] = funcptr
-        if self.debug:
+        if self.debug and funcptr != quit:
             funcptr()
         
     def setCliRule(self,rule):
@@ -197,6 +199,9 @@ class CiscoStyleCli:
                         print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,flush=True)
                         if 'funcname' in cmdRoot[s] and cmdRoot[s]['funcname'] in self.funcTable :
                             t = cmdRoot[s]['funcname']
+                            if self.debug:
+                                print("funcname:",t)
+                                print(self.funcTable)
                             self.funcTable[t]()
                 break
             lastWord = v
@@ -288,6 +293,14 @@ class CiscoStyleCli:
             root , lastCmd , retValue = self.checkCmd(self.cmd)
             if self.debug:
                 print('lastCmd:', lastCmd , 'retValue:',retValue)
+            if self.c == '\n':
+                if self.debug:
+                    print(c, 'RETURN',flush=True)
+                    print("root:",root)
+                    print("cmd:",self.cmd.replace('\t',' '))
+                retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
+                    return retValue
             # get a word
             for i in range(len(lastCmd)):
                 if lastCmd[i] == '"' and i != 0 and lastCmd[i-1] != "\\":
@@ -301,6 +314,7 @@ class CiscoStyleCli:
                     print(flush=True)
                     print("input:/",self.cmd.replace("\t"," "),"/",self.cmd.replace("\t"," "),sep="",end="",flush=True)
                 c = self.getch()
+                self.c = c
                 
                 # print(c,ord(c))
                 if ord(c) == 8 or ord(c) == 127 :  # backspace 8:linux terminal ,  127:vscode terminal
@@ -319,16 +333,18 @@ class CiscoStyleCli:
                     else :
                         quoteFlag = False
                 if quoteFlag == True:
+                    if c == '\n':
+                        continue
                     if c == ' ':
                         c = '\t'
                     self.cmd += c
                     print(c.replace("\t",' '),end="",flush=True)
                 else : 
-                    if c == '\t':
+                    if c == '\t' or c == '\n':
                         c = ' '
                     if c == ' ' and self.cmd and self.cmd[-1] != ' ':
                         self.cmd += c
-                    if c == ' ':
+                    if c == ' ' :
                         break
                     if c == '\n':
                         if self.debug:
@@ -366,15 +382,44 @@ class RemoteCommand :
     This Class choose and execute of remote command.
     Manage the DB (CSV)
     """
-    def __init__(self):
-        pass
+    def __init__(self,csvfile="",debug=False):
+        if csvfile:
+            self.csvfile = csvfile
+        self.debug = debug
+        self.fieldnames = ['name','id','host','passwd','directory','email','enable']
+        self.list = []
+        if csvfile and os.path.exists(csvfile):
+            with open(csvfile, "r" , newline='') as csvfd:
+                reader = csv.DictReader(csvfd)
+                for row in reader:
+                    self.list.append(row)
+                if len(self.fieldnames) < len(list(row.keys())):
+                    self.fieldnames = list(row.keys())
+
+    def appendData(self,rv):
+        row = {}
+        for f in self.fieldnames:
+            row[f] = ""
+            if f in rv:
+                row[f] = rv[f]
+        self.list.append(row)
+    def dataWrite(self):
+        with open('fish.csv', 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+            writer.writeheader()
+            for row in self.list:
+                writer.writerow(row)
+        
     def run(self):
         pass
 
-def get():
-    print()
-    print("NEXT")
-    print()
+    def listTable(self):
+        print()
+        cnt = 0
+        for row in self.list:
+            print(cnt , ":" , row)
+            cnt += 1
+        print()
 
 if (__name__ == "__main__"):
 
@@ -387,8 +432,8 @@ if (__name__ == "__main__"):
     parser.add_argument("-t", "--test", action="store_true",default=False,help='show the command but not run it for test & debug')
     parser.add_argument("-d", "--debug", action="store_true",default=False,help='show the command but not run it for test & debug')
     parser.add_argument(
-        '--infile',
-        metavar="<infile>",
+        '--csvfile',
+        metavar="<csvfile>",
         type=str,
         default="fish.csv",
         help='csv file with field -  name,login_id,passwd,host,directory,email')
@@ -402,19 +447,19 @@ if (__name__ == "__main__"):
     args = parser.parse_args()
 
     csc = CiscoStyleCli(rule = args.rulefile , debug = args.debug)
-    csc.setFunc("get",get)
-    retValue = csc.run()
-    print("cmd=[",retValue['__return__'],"]",sep="")
-    print("retValue:",retValue)
+    rc = RemoteCommand(csvfile=args.csvfile,debug = args.debug)
+    csc.setFunc("listTable",rc.listTable)
+    csc.setFunc("quit",quit)
+    while True:
+        retValue = csc.run()
+        if "register" == retValue['__return__'][:len('register')]:
+            rc.appendData(retValue)
+            rc.dataWrite()
+        print("cmd=[",retValue['__return__'],"]",sep="")
+        print("retValue:",retValue)
     
     # import ruleData
     # print(ruleData.remoteCmd)
     
-    quit()
-
-    cissue = Solution(
-                 infile = args.infile
-                 , isTest = args.test
-                 )
 
 
