@@ -8,6 +8,9 @@ import datetime
 import re
 import argparse
 # from collections import defaultdict
+import io
+import time
+import subprocess
 import os
 import glob
 import csv
@@ -610,9 +613,9 @@ class RemoteCommand :
                     bestIdx = i
                     best = float(v['cpuUsage'])
         if bestIdx == -1:
-            return (best,None)
+            return (-1,best,None)
         else:
-            return (best,self.list[bestIdx])
+            return (bestIdx,best,self.list[bestIdx])
         
     def enableTable(self,v=None):
         functionNameAsString = sys._getframe().f_code.co_name
@@ -634,6 +637,32 @@ class RemoteCommand :
             print(cnt , ":" , row)
             cnt += 1
         print()
+        
+    def runDownloadTigerDesktop(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug:
+            print("functionname:",functionNameAsString)
+            print(self)
+            print("v:",v)
+        self.test(onlyEnable=True)
+        project = v['__cmd__'][2]
+        bestIdx,best,bestv = self.getBest()
+        print()
+        print("name:",project)
+        if bestv != None:
+            print("best index :",bestIdx)
+            print("best cpu usage :",best)
+            print("bestv:", bestv)
+            print("host:",bestv['host'])
+            s = "sshpass -p " + bestv['passwd'] + " ssh -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ' ' + '"' + 'cd code/fish; git pull ; cd ' + project + ' ; touch ppp; sh down.sh' + '"'
+            print(s)
+            os.system(s)
+        else :
+            print("All Server is not good.")
+        
+        # out = os.popen(s).read()
+        # print("out:",out)
+        
 
 if (__name__ == "__main__"):
 
@@ -699,8 +728,11 @@ if (__name__ == "__main__"):
     # quitCmd = csc.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=quit)
     # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=quit)
     # run [return]  <- use it now to check server's status
-    runCmd = csc.addCmd(remoteCmd,'run','command',"", "run download & compile")
-    tigerDesktopCmd = csc.addCmd(runCmd ,'tiger-desktop','command',"returnable", "download & compile of tiger-desktop")
+    runCmd = csc.addCmd(remoteCmd,'run','command',"", "run download or compile")
+    downloadCmd = csc.addCmd(runCmd,'download','command',"", "run download")
+    tigerDesktopCmd = csc.addCmd(downloadCmd ,'tiger-desktop','command',"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
+    compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
+    tigerDesktopCmd = csc.addCmd(compileCmd ,'tiger-desktop','command',"returnable", "compile of tiger-desktop")
     
     csc.setCliRule(remoteCmd)
     # csc.setFunc("listTable",rc.listTable)
@@ -716,9 +748,16 @@ if (__name__ == "__main__"):
         elif "test" == retValue['__return__'].strip():
             rc.test()
         elif "run" == retValue['__cmd__'][0]:
-            rc.test(onlyEnable=True)
-            best,bestv = rc.getBest()
-            print(best , bestv)
+            # rc.test(onlyEnable=True)
+            bestIdx,best,bestv = rc.getBest()
+            # if bestv != None:
+            #     print("best index :",bestIdx)
+            #     print("best cpu usage :",best)
+            #     print("bestv:", bestv)
+            #     rc.runTigerDesktop(retValue,bestv)
+            # else :
+            #     print("All Server is not good.")
+            
         print("loop cmd=[",retValue['__return__'],"]",sep="")
         print("loop retValue:",retValue)
     
