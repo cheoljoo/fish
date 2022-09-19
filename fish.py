@@ -114,7 +114,7 @@ class CiscoStyleCli:
             print("remoteCmd:",self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         
-    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None):
+    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None):
         """ 
         root['cmd'][command]['type'] = type
         root['cmd'][command]['cmd'] = {} # if you need more command
@@ -129,12 +129,14 @@ class CiscoStyleCli:
             root['cmd'][command]['type'] = 'command'
         root['cmd'][command]['returnable'] = returnable
         root['cmd'][command]['desc'] = desc
+        if additionalDict:
+            root['cmd'][command]['additionalDict'] = additionalDict
         if prefunc :
             root['cmd'][command]['prefunc'] = prefunc
         if returnfunc :
             root['cmd'][command]['returnfunc'] = returnfunc
         return root['cmd'][command]
-    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None):
+    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None):
         """ 
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
@@ -147,6 +149,8 @@ class CiscoStyleCli:
         root['cmd'][name]['argument-type'] = type
         root['cmd'][name]['returnable'] = returnable
         root['cmd'][name]['desc'] = desc
+        if additionalDict:
+            root['cmd'][name]['additionalDict'] = additionalDict
         # if 'arguments' not in root:
         #     root['arguments'] = []
         # root['arguments'].append({'name':name,'type':type})
@@ -248,6 +252,12 @@ class CiscoStyleCli:
         finally:
             termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
 
+    def copyAdditionalDict(self,_from,_to):
+        if 'additionalDict' in _from:
+            for adk,adv in _from['additionalDict'].items():
+                if '__additionalDict__' not in _to:
+                    _to['__additionalDict__'] = {}
+                _to['__additionalDict__'][adk] = adv
     def checkCmd(self,cmd):
         """ 
         check whether this cmd is right
@@ -311,6 +321,7 @@ class CiscoStyleCli:
                         returnable = ""
                         if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
                             returnable = '[returnable]'
+                        self.copyAdditionalDict(cmdRoot[s],retValue)
                         print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
                         if 'prefunc' in cmdRoot[s] and cmdRoot[s]['prefunc'] :
                             t = cmdRoot[s]['prefunc']
@@ -357,6 +368,7 @@ class CiscoStyleCli:
                     else:
                         retCmdList.append(v)
                         retValue['__cmd__'] = retCmdList
+                    self.copyAdditionalDict(cmdRoot[focus],retValue)
                 else :
                     if len(matched) == 0:
                         pass
@@ -370,6 +382,7 @@ class CiscoStyleCli:
                             retCmdList.append(v)
                             retValue['__cmd__'] = retCmdList
                         self.cmd = newCmd
+                        self.copyAdditionalDict(cmdRoot[matched[0]],retValue)
                     else:
                         newCmd += v
                         print()
@@ -427,6 +440,7 @@ class CiscoStyleCli:
                             retCmdList.append(focus)
                             retValue['__cmd__'] = retCmdList
                             root = cmdRoot[focus]
+                        
                         break
         return (root,lastWord,retValue)
             
@@ -732,7 +746,7 @@ if (__name__ == "__main__"):
     downloadCmd = csc.addCmd(runCmd,'download','command',"", "run download")
     tigerDesktopCmd = csc.addCmd(downloadCmd ,'tiger-desktop','command',"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
     compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
-    tigerDesktopCmd = csc.addCmd(compileCmd ,'tiger-desktop','command',"returnable", "compile of tiger-desktop")
+    tigerDesktopCmd = csc.addCmd(compileCmd ,'tiger-desktop','command',"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
     
     csc.setCliRule(remoteCmd)
     # csc.setFunc("listTable",rc.listTable)
