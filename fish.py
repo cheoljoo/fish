@@ -11,6 +11,7 @@ import argparse
 import os
 import glob
 import csv
+import sys
 print(os.sys.path)
 #from atlassian import Jira
 
@@ -38,6 +39,7 @@ wordRe = re.compile('^\s*(?P<ans>[^ \n]+)')
 cpusRe = re.compile('^\s*cpu count:\s*(?P<ans>[0-9\-\+\.]+)')
 cpuUsageRe = re.compile('^\s*CPU usage:\s*(?P<ans>[0-9\-\+\.]+)')
 dfRe = re.compile('^\s*/dev/\S+\s+\S+\s+\S+\s+(?P<ans>[0-9\-\+\.]+[MGT]+)')
+
 
 
 class CiscoStyleCli:
@@ -78,7 +80,7 @@ class CiscoStyleCli:
         tmp = self.addArgument(tmp,'email','str',"", "email address")
         tmp = self.addArgument(tmp,'command','str',"", "commands for site")
         quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
-        tmp = self.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
+        # tmp = self.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
         # # enable : now i do not use it
         # enableCmd = self.addCmd(self.remoteCmd,'enable','command',"", "change to enable status : you can use this system")
         # tmp = self.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list","listTable")
@@ -160,20 +162,73 @@ class CiscoStyleCli:
         self.remoteCmd = rule
         if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
             quitCmd = self.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
-            tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
+            # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
         if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
-            listCmd = self.addCmd(remoteCmd ,'list','command',"returnable", "exit",returnfunc=self.list)
+            listCmd = self.addCmd(remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self.list)
             # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
+        if 'cmd' in self.remoteCmd and 'list-detailed' not in self.remoteCmd['cmd']:
+            listDetailedCmd = self.addCmd(remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+        self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
     
-    def quit(self):
+    def quit(self,v=None):
         print("byebye!!   see you again~~   *^^*")
         quit()
     
-    def list(self):
+    def list(self,v):
+        self.tlist = []
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug:
+            print("functionname:",functionNameAsString)
+            print(self,v)
+        self.traverseList(self.remoteCmd,"")
+        for s in self.tlist:
+            print(s)
         print()
-        print("LIST")
+    def listDetailed(self,v):
+        self.tlist = []
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug:
+            print("functionname:",functionNameAsString)
+            print(self,v)
+        self.traverseList(self.remoteCmd,"",detailed=True)
+        for s in self.tlist:
+            print(s)
         print()
-        
+    def traverseList(self,vv,start:str,detailed=False):
+        # print(start," ",file=f)
+        if isinstance(vv, dict):
+            if 'cmd' in vv:
+                v2 = vv['cmd']
+                for k, v in v2.items():
+                    rt = " "
+                    if 'returnable' in v and v['returnable'] == 'returnable':
+                        rt = ' [leaf]'
+                    if self.debug:
+                        print("show:",rt,k,v)
+                    if detailed:
+                        prefunc = ""
+                        if 'prefunc' in v:
+                            prefunc = " pre-func" + str(v['prefunc'])
+                        returnfunc = ""
+                        if 'returnfunc' in v:
+                            returnfunc = " ret-func:" + str(v['returnfunc'])
+                        if 'type' in v and v['type'] != 'argument': 
+                            self.traverseList(v,start + " (commands) " + prefunc + k  + returnfunc + rt,detailed=True)
+                        else:
+                            argtype = v['argument-type']
+                            self.traverseList(v,start + " (argument:" + argtype +") " + prefunc + k + returnfunc + rt,detailed=True)
+                    else:
+                        if 'type' in v and v['type'] != 'argument': 
+                            self.traverseList(v,start + " (commands) " + k  + rt)
+                        else:
+                            self.traverseList(v,start + " (argument) " + k  + rt)
+            else:
+                if self.debug:
+                    print("start:",start)
+                self.tlist.append(start)
+        # else :
+        #     print(start ,  " = '''", vv , "'''", sep="", file=f)
+
     def getch(self):
         """ 
         get one character without print
@@ -198,7 +253,8 @@ class CiscoStyleCli:
         retValue = {}
         retCmdList = []
         words = cmd.split(' ')
-        if cmd == "":
+        # print("key:/",self.c,"/",sep="")
+        if cmd == "" and (self.c == ' ' or self.c == '\t'):
             words = []
             if 'cmd' in self.remoteCmd:
                 cmdRoot = self.remoteCmd['cmd']
@@ -215,6 +271,7 @@ class CiscoStyleCli:
                     if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
                         returnable = '[returnable]'
                     print('    recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
+        # print("kkk")
         root = self.remoteCmd
         if self.debug:
             print("checkCmd:words:",words)
@@ -223,8 +280,10 @@ class CiscoStyleCli:
         while len(words):
             v = words.pop(0)
             if self.debug:
+                print("get word : v :",v)
                 print("root:",root)
                 print("words:",words)
+                print("retValue:",retValue)
             if v == '':
                 if self.debug:
                     print("v is empty")
@@ -252,11 +311,12 @@ class CiscoStyleCli:
                         print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
                         if 'prefunc' in cmdRoot[s] and cmdRoot[s]['prefunc'] :
                             t = cmdRoot[s]['prefunc']
-                            print("prefunc",t)
                             if self.debug:
+                                print("prefunc",t)
                                 print("funcname:",t)
                                 # print(self.funcTable)
-                            t()
+                                print("retValue:",retValue)
+                            t(retValue)
                 if self.debug:
                     print("matchedCount:",matchedCount)
                     print("matchedCommand:",matchedCommand)
@@ -277,21 +337,23 @@ class CiscoStyleCli:
                         if self.debug :
                             print("argument cmd :",v , "type:" , cmdRoot[crk]['type'], "ar type:" , cmdRoot[crk]['argument-type'] , "next keys:", cmdRoot.keys())
                         focus = crk
-                    elif v == crk:
-                        if self.debug :
-                            print("exact matched cmd key:",crk)
-                        focus = crk
-                    elif v == crk[:len(v)] :
-                        if self.debug :
-                            print("matched cmd key:",crk)
-                        matched.append(crk)
-                if focus:
+                    else:
+                        if v == crk:
+                            if self.debug :
+                                print("exact matched cmd key:",crk)
+                            focus = crk
+                        if v == crk[:len(v)] :
+                            if self.debug :
+                                print("matched cmd key:",crk)
+                            matched.append(crk)
+                if focus and len(matched) <= 1:
                     newCmd += v + " "
                     root = cmdRoot[focus]
                     if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
                         retValue[focus] = v
                     else:
                         retCmdList.append(v)
+                        retValue['__cmd__'] = retCmdList
                 else :
                     if len(matched) == 0:
                         pass
@@ -303,6 +365,7 @@ class CiscoStyleCli:
                             retValue[focus] = v
                         else:
                             retCmdList.append(v)
+                            retValue['__cmd__'] = retCmdList
                         self.cmd = newCmd
                     else:
                         newCmd += v
@@ -320,6 +383,7 @@ class CiscoStyleCli:
                                 returnable = '[returnable]'
                             print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
                         break
+
         if self.debug :
             print("newCmd:/",newCmd,"/ root: ",root,sep="")
         self.cmd = newCmd
@@ -342,6 +406,25 @@ class CiscoStyleCli:
         #     else :
         #         break
         retValue['__cmd__'] = retCmdList
+        if self.c == '\n':
+            if self.debug:
+                print("return root:",root)
+                print("lastWord:",lastWord)
+                print("retValue:",retValue)
+                print("cmd:/",self.cmd,"/",sep="")
+            if 'cmd' in root:
+                cmdRoot = root['cmd']
+                focus = ""
+                for crk, crv in cmdRoot.items():
+                    if lastWord == crk:
+                        if self.debug :
+                            print("exact matched cmd key:",crk)
+                        focus = crk
+                        if 'returnable' in cmdRoot[focus] and cmdRoot[focus]['returnable'] == 'returnable' :
+                            retCmdList.append(focus)
+                            retValue['__cmd__'] = retCmdList
+                            root = cmdRoot[focus]
+                        break
         return (root,lastWord,retValue)
             
     def run(self):
@@ -349,8 +432,9 @@ class CiscoStyleCli:
         main part of cisco command line interface
         get string as input
         """
-        print("the simple distributed compile environment remotely",flush=True)
+        # print("the simple distributed compile environment remotely",flush=True)
 
+        print('\n'*2)
         print('input:',end='',flush=True)
         self.cmd = ""
         quoteFlag = False
@@ -365,9 +449,11 @@ class CiscoStyleCli:
                     print("cmd:",self.cmd.replace('\t',' '))
                 retValue['__return__'] = self.cmd.strip().replace('\t',' ')
                 if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
-                    print('returnfunc')
                     if 'returnfunc' in root and root['returnfunc']:
-                        root['returnfunc']()
+                        if self.debug:
+                            print('returnfunc')
+                            print("retValue:",retValue)
+                        root['returnfunc'](retValue)
                     return retValue
             # get a word
             for i in range(len(lastCmd)):
@@ -414,14 +500,14 @@ class CiscoStyleCli:
                         self.cmd += c
                     if c == ' ' :
                         break
-                    if c == '\n':
-                        if self.debug:
-                            print(c, 'RETURN',flush=True)
-                            print("root:",root)
-                            print("cmd:",self.cmd.replace('\t',' '))
-                        retValue['__return__'] = self.cmd.strip().replace('\t',' ')
-                        if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
-                            return retValue
+                    # if c == '\n':
+                    #     if self.debug:
+                    #         print(c, 'RETURN',flush=True)
+                    #         print("root:",root)
+                    #         print("cmd:",self.cmd.replace('\t',' '))
+                    #     retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                    #     if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
+                    #         return retValue
                     else :
                         print(c,end="",flush=True)
                         self.cmd += c
@@ -454,7 +540,7 @@ class RemoteCommand :
         if csvfile:
             self.csvfile = csvfile
         self.debug = debug
-        self.fieldnames = ['name','id','host','passwd','directory','email','command','enable','cpus','cpuUsage','df']
+        self.fieldnames = ['name','id','host','passwd','directory','email','command','cpus','cpuUsage','df','runnigTime','enable']
         self.list = []
         if csvfile and os.path.exists(csvfile):
             with open(csvfile, "r" , newline='') as csvfd:
@@ -527,8 +613,21 @@ class RemoteCommand :
             return (best,None)
         else:
             return (best,self.list[bestIdx])
-
-    def listTable(self):
+        
+    def enableTable(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug:
+            print("functionname:",functionNameAsString)
+            print(v)
+        if v and 'choose' in v:
+            print(functionNameAsString , v['choose'])
+    
+    def listTable(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug:
+            print("functionname:",functionNameAsString)
+            print(self)
+            print(v)
         print()
         cnt = 0
         for row in self.list:
@@ -576,7 +675,7 @@ if (__name__ == "__main__"):
     tmp = csc.addArgument(tmp,'command','str',"", "commands for site")
     # enable : now i do not use it
     enableCmd = csc.addCmd(remoteCmd,'enable','command',"", "change to enable status : you can use this system")
-    tmp = csc.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable)
+    tmp = csc.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.enableTable)
     # disable : now i do not use it
     disableCmd = csc.addCmd(remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
     tmp = csc.addArgument(disableCmd,'choose','int',"", "choose number from the list",prefunc=rc.listTable)
@@ -595,7 +694,7 @@ if (__name__ == "__main__"):
     helpCmd = csc.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
     hmiCmd = csc.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
     tmp = csc.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
-    tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer")
+    tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer",prefunc=lambda x: print("prefunc:",x))
     # quit
     # quitCmd = csc.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=quit)
     # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=quit)
@@ -620,8 +719,8 @@ if (__name__ == "__main__"):
             rc.test(onlyEnable=True)
             best,bestv = rc.getBest()
             print(best , bestv)
-        print("cmd=[",retValue['__return__'],"]",sep="")
-        print("retValue:",retValue)
+        print("loop cmd=[",retValue['__return__'],"]",sep="")
+        print("loop retValue:",retValue)
     
     # import ruleData
     # print(ruleData.remoteCmd)
