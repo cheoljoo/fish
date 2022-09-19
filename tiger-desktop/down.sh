@@ -1,6 +1,9 @@
 #/data01/cheoljoo.lee/bin/repo init -u ssh://vgit.lge.com:29420/tiger/manifest/ -b tiger_release -m tiger_desktop_gen12_release.xml
+echo "../repo init -u ssh://vgit.lge.com:29420/tiger/manifest/ -b tiger_release -m tiger_desktop_release.xml"
 ../repo init -u ssh://vgit.lge.com:29420/tiger/manifest/ -b tiger_release -m tiger_desktop_release.xml
+echo "../repo sync -cq -j8"
 ../repo sync -cq -j8
+echo "../repo start tiger_release --all"
 ../repo start tiger_release --all
 echo "cd apps_proc/lge/servicelayer/core/services/"
 echo "cd tiger-desktop-gen12/intel-build/poky/meta-tiger/classes"
@@ -18,4 +21,5 @@ echo "$  ./run-docker.sh committest       # Run commit test"
 echo "$  ./run-docker.sh coverity         # Run coverity source code"
 echo "$  ./run-docker.sh uts              # Run unit test"
 
+echo "done"
 # vi ./intel-build/poky/meta-tiger/classes/tiger-feature-common.bbclass

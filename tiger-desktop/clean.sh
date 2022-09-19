@@ -14,4 +14,5 @@ mv dummy d
 rm -rf d &
 rm -f m
 
+echo "done"
 #a35  apps_proc  build_apps.sh  clean.sh  down.sh  dummy  intel-build
