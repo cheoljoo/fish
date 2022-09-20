@@ -114,7 +114,7 @@ class CiscoStyleCli:
             print("remoteCmd:",self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         
-    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None):
+    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
         """ 
         root['cmd'][command]['type'] = type
         root['cmd'][command]['cmd'] = {} # if you need more command
@@ -135,8 +135,10 @@ class CiscoStyleCli:
             root['cmd'][command]['prefunc'] = prefunc
         if returnfunc :
             root['cmd'][command]['returnfunc'] = returnfunc
+        if chooseList :
+            root['cmd'][command]['chooseList'] = chooseList
         return root['cmd'][command]
-    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None):
+    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
         """ 
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
@@ -158,6 +160,8 @@ class CiscoStyleCli:
             root['cmd'][name]['prefunc'] = prefunc
         if returnfunc:
             root['cmd'][name]['returnfunc'] = returnfunc
+        if chooseList:
+            root['cmd'][name]['chooseList'] = chooseList
         return root['cmd'][name]
     
     # def setFunc(self,funcname,funcptr):
@@ -265,6 +269,7 @@ class CiscoStyleCli:
         """
         retValue = {}
         retCmdList = []
+        retLiteralCmdList = []
         words = cmd.split(' ')
         # print("key:/",self.c,"/",sep="")
         if cmd == "" and (self.c == ' ' or self.c == '\t'):
@@ -318,6 +323,9 @@ class CiscoStyleCli:
                         if cmdRoot[s]['type'] != 'argument':
                             t = 'command'
                             matchedCommand = s
+                        elif 'chooseList' in cmdRoot[s]:
+                            for ci,cv in enumerate(cmdRoot[s]['chooseList']):
+                                print("ci:",ci,cv)
                         returnable = ""
                         if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
                             returnable = '[returnable]'
@@ -365,9 +373,19 @@ class CiscoStyleCli:
                     root = cmdRoot[focus]
                     if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
                         retValue[focus] = v
+                        if 'chooseList' in cmdRoot[focus]:
+                            retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                        else : 
+                            retLiteralCmdList.append(v)
+                        retValue['__literal_cmd__'] = retLiteralCmdList
                     else:
-                        retCmdList.append(v)
+                        retCmdList.append(v)  # command
                         retValue['__cmd__'] = retCmdList
+                        if 'chooseList' in cmdRoot[focus]:
+                            retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                        else : 
+                            retLiteralCmdList.append(v)
+                        retValue['__literal_cmd__'] = retLiteralCmdList
                     self.copyAdditionalDict(cmdRoot[focus],retValue)
                 else :
                     if len(matched) == 0:
@@ -378,9 +396,19 @@ class CiscoStyleCli:
                         root = cmdRoot[matched[0]]
                         if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
                             retValue[focus] = v
+                            if 'chooseList' in cmdRoot[focus]:
+                                retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                            else : 
+                                retLiteralCmdList.append(v)
+                            retValue['__literal_cmd__'] = retLiteralCmdList
                         else:
-                            retCmdList.append(v)
+                            retCmdList.append(v)  # command
                             retValue['__cmd__'] = retCmdList
+                            if 'chooseList' in cmdRoot[focus]:
+                                retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                            else : 
+                                retLiteralCmdList.append(v)
+                            retValue['__literal_cmd__'] = retLiteralCmdList
                         self.cmd = newCmd
                         self.copyAdditionalDict(cmdRoot[matched[0]],retValue)
                     else:
@@ -421,6 +449,7 @@ class CiscoStyleCli:
         #             break
         #     else :
         #         break
+        retValue['__literal_cmd__'] = retLiteralCmdList
         retValue['__cmd__'] = retCmdList
         if self.c == '\n':
             if self.debug:
@@ -439,6 +468,12 @@ class CiscoStyleCli:
                         if 'returnable' in cmdRoot[focus] and cmdRoot[focus]['returnable'] == 'returnable' :
                             retCmdList.append(focus)
                             retValue['__cmd__'] = retCmdList
+                            if 'chooseList' in cmdRoot[focus]:
+                                if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
+                                    retLiteralCmdList.append(focus)
+                                else:
+                                    retLiteralCmdList.append(v)
+                            retValue['__literal_cmd__'] = retLiteralCmdList
                             root = cmdRoot[focus]
                         
                         break
@@ -566,6 +601,7 @@ class RemoteCommand :
                     self.list.append(row)
                 if len(self.fieldnames) < len(list(row.keys())):
                     self.fieldnames = list(row.keys())
+        self.host = ['tiger','bmw','toyota']
         
     def appendData(self,rv):
         row = {}
@@ -677,6 +713,12 @@ class RemoteCommand :
         # out = os.popen(s).read()
         # print("out:",out)
         
+    def showHost(self,v=None):
+        for i,v in enumerate(self.host):
+            print(i,v)
+        print('choose number')
+            
+        
 
 if (__name__ == "__main__"):
 
@@ -725,8 +767,8 @@ if (__name__ == "__main__"):
     # list [return] : no arguments
     # listCmd = csc.addCmd(remoteCmd,'list','command',"returnable", "show system list")
     # cmd "ls -al \"*.sh\" ; ls "
-    runCmd = csc.addCmd(remoteCmd,'run','command',"", "execute command with quoted string")
-    tmp = csc.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
+    # runCmd = csc.addCmd(remoteCmd,'run','command',"", "execute command with quoted string")
+    # tmp = csc.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
     # test [return]  <- use it now to check server's status
     testCmd = csc.addCmd(remoteCmd,'test','command',"returnable", "test : send command ls -al for each server")
     twoskipCmd = csc.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
@@ -747,6 +789,12 @@ if (__name__ == "__main__"):
     tigerDesktopCmd = csc.addCmd(downloadCmd ,'tiger-desktop','command',"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
     compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
     tigerDesktopCmd = csc.addCmd(compileCmd ,'tiger-desktop','command',"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
+    
+    gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
+    tmp = csc.addArgument(gethostCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'})
+    tmp = csc.addArgument(tmp,'number','chooseList',"returnable", "choose222 number from the list",chooseList=['bmw','tiger','desktop'])
+    
+    
     
     csc.setCliRule(remoteCmd)
     # csc.setFunc("listTable",rc.listTable)
