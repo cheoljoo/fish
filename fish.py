@@ -621,7 +621,7 @@ class RemoteCommand :
     def test(self,onlyEnable=None):
         print('\n'*3)
         for v in self.list:
-            s = "sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' ' + v['command']
+            s = "timeout 5 sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' ' + v['command']
             print(s)
             if onlyEnable == True and v['enable'] != 'true':
                 continue
@@ -688,10 +688,92 @@ class RemoteCommand :
             cnt += 1
         print()
         
+    def setupClean(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if self.debug:
+            print(self)
+            print("v:",v)
+        project = v['__cmd__'][2]
+        choose = int(v['choose'])
+        print()
+        print("name:",project)
+        id = self.list[choose]['id']
+        passwd = self.list[choose]['passwd']
+        host = self.list[choose]['host']
+        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./clean.sh' + '"'
+        print(s)
+        # os.system(s)
+        
+    def setupDownload(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if self.debug:
+            print(self)
+            print("v:",v)
+        project = v['__cmd__'][2]
+        choose = int(v['choose'])
+        print()
+        print("name:",project)
+        id = self.list[choose]['id']
+        passwd = self.list[choose]['passwd']
+        host = self.list[choose]['host']
+        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./down.sh' + '"'
+        print(s)
+        # os.system(s)
+        
+    def setupCompile(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if self.debug:
+            print(self)
+            print("v:",v)
+        project = v['__cmd__'][2]
+        choose = int(v['choose'])
+        print()
+        print("name:",project)
+        id = self.list[choose]['id']
+        passwd = self.list[choose]['passwd']
+        host = self.list[choose]['host']
+        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./run-docker.sh build apps' + '"'
+        print(s)
+        # os.system(s)
+        s = "sshpass -p " + passwd + " scp -o StrictHostKeyChecking=no " + id + '@' + host + ':' + '~/code/fish/' + project + '/intel-build/build/packages/tiger*.ipk' + ' . '
+        print(s)
+        # os.system(s)
+        
+    def setupBestCompile(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if self.debug:
+            print(self)
+            print("v:",v)
+        self.test(onlyEnable=True)
+        project = v['__cmd__'][2]
+        bestIdx,best,bestv = self.getBest()
+        print()
+        print("name:",project)
+        if bestv != None:
+            print("best index :",bestIdx)
+            print("best cpu usage :",best)
+            print("bestv:", bestv)
+            print("host:",bestv['host'])
+            s = "sshpass -p " + bestv['passwd'] + " ssh -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./run-docker.sh build apps' + '"'
+            print(s)
+            # os.system(s)
+            s = "sshpass -p " + bestv['passwd'] + " scp -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ':' + '~/code/fish/' + project + '/intel-build/build/packages/tiger*.ipk' + ' . '
+            print(s)
+            # os.system(s)
+        else :
+            print("All Server is not good.")
+        
+        # out = os.popen(s).read()
+        # print("out:",out)
+
     def runDownloadTigerDesktop(self,v=None):
         functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
         if self.debug:
-            print("functionname:",functionNameAsString)
             print(self)
             print("v:",v)
         self.test(onlyEnable=True)
@@ -770,7 +852,7 @@ if (__name__ == "__main__"):
     # runCmd = csc.addCmd(remoteCmd,'run','command',"", "execute command with quoted string")
     # tmp = csc.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
     # test [return]  <- use it now to check server's status
-    testCmd = csc.addCmd(remoteCmd,'test','command',"returnable", "test : send command ls -al for each server")
+    testCmd = csc.addCmd(remoteCmd,'test','command',"", "test : send command ls -al for each server")
     twoskipCmd = csc.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
     threeCmd = csc.addCmd(twoskipCmd ,'three','command',"", "three follows test")
     # test sldd hmi 4 5 [return]
@@ -780,6 +862,19 @@ if (__name__ == "__main__"):
     hmiCmd = csc.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
     tmp = csc.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
     tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer",prefunc=lambda x: print("prefunc:",x))
+    # setup
+    setupCmd = csc.addCmd(remoteCmd,'setup','command',"returnable", "setup clean or download in all enabled server",returnfunc=rc.test)
+    cleanCmd = csc.addCmd(setupCmd ,'clean','command',"", "clean-up")
+    tmp = csc.addCmd(cleanCmd ,'tiger-desktop','command',"", "clean in tiger-desktop")
+    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupClean)
+    downloadCmd = csc.addCmd(setupCmd ,'download','command',"", "download")
+    tmp = csc.addCmd(downloadCmd ,'tiger-desktop','command',"", "download in tiger-desktop")
+    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupDownload)
+    compileCmd = csc.addCmd(setupCmd ,'compile','command',"", "compile & copy ipk")
+    tmp = csc.addCmd(compileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop")
+    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCompile)
+    bestCompileCmd = csc.addCmd(setupCmd ,'bestcompile','command',"", "compile & copy ipk in best status server")
+    tmp = csc.addCmd(bestCompileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop",returnfunc=rc.setupBestCompile)
     # quit
     # quitCmd = csc.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=quit)
     # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=quit)
