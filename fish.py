@@ -784,12 +784,14 @@ class RemoteCommand :
                 grp = newFileRe.search(l)
                 if grp:
                     filename = str(grp.group('ans')).strip()
-                    filelist.append('.' + currentPath.strip() + '/' + filename.strip())
+                    if currentPath.find('intel-build') == -1:
+                        filelist.append('.' + currentPath.strip() + '/' + filename.strip())
             elif modifiedRe.search(l):
                 grp = modifiedRe.search(l)
                 if grp:
                     filename = str(grp.group('ans'))
-                    filelist.append('.' + currentPath.strip() + "/" + filename.strip())
+                    if currentPath.find('intel-build') == -1:
+                        filelist.append('.' + currentPath.strip() + "/" + filename.strip())
             if rootPathFlag:
                 rootPath = l.strip()
                 rootPathFlag = False
@@ -854,10 +856,73 @@ class RemoteCommand :
             print("best cpu usage :",best)
             print("bestv:", bestv)
             print("host:",bestv['host'])
-            s = "sshpass -p " + bestv['passwd'] + " ssh -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./run-docker.sh build apps' + '"'
+            id = bestv['id']
+            passwd = bestv['passwd']
+            host = bestv['host']
+
+            print('cd ' + project + ' ; echo "===========>__<==ROOT" > repo_status.log')
+            os.system('cd ' + project + ' ; echo "===========>__<==ROOT" > repo_status.log')
+            print('cd ' + project + ' ; pwd >> repo_status.log')
+            os.system('cd ' + project + ' ; pwd >> repo_status.log')
+            print('cd ' + project + ' ; ../repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+            os.system('cd ' + project + ' ; ../repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+    
+            with open(project + "/repo_status.log", "r" , newline='') as f:
+                lines = f.readlines()
+    
+            rootPath = ""
+            currentPath = ""
+            rootPathFlag = False
+            currentPathFlag = False
+            filelist = []
+            for l in lines:
+                if rootPathRe.search(l):
+                    grp = rootPathRe.search(l)
+                    rootPathFlag = True
+                    continue
+                elif currentPathRe.search(l):
+                    grp = currentPathRe.search(l)
+                    if grp:
+                        currentPathFlag = True
+                        continue
+                elif newFileRe.search(l):
+                    grp = newFileRe.search(l)
+                    if grp:
+                        filename = str(grp.group('ans')).strip()
+                        if currentPath.find('intel-build') == -1:
+                            filelist.append('.' + currentPath.strip() + '/' + filename.strip())
+                elif modifiedRe.search(l):
+                    grp = modifiedRe.search(l)
+                    if grp:
+                        filename = str(grp.group('ans'))
+                        if currentPath.find('intel-build') == -1:
+                            filelist.append('.' + currentPath.strip() + "/" + filename.strip())
+                if rootPathFlag:
+                    rootPath = l.strip()
+                    rootPathFlag = False
+                if currentPathFlag:
+                    currentPath = l.strip()
+                    currentPath = currentPath.replace(rootPath,"")
+                    currentPathFlag = False
+            print("filelist:",filelist)
+    
+            s = 'cd ' + project + ' ; tar cvfz modified.tar.gz ' + ' '.join(filelist)
             print(s)
             os.system(s)
-            s = "sshpass -p " + bestv['passwd'] + " scp -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ':' + '~/code/fish/' + project + '/intel-build/build/packages/tiger*.ipk' + ' . '
+            s = "sshpass -p " + passwd + " scp -o StrictHostKeyChecking=no " + project + '/modified.tar.gz ' + id + '@' + host + ':~/code/fish/' + project
+            print(s)
+            os.system(s)
+            s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; tar xvfz modified.tar.gz' + '"'
+            print(s)
+            os.system(s)
+            s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; python3 make_tar_ball.py' + '"'
+            print(s)
+            os.system(s)
+
+            s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./run-docker.sh build apps' + '"'
+            print(s)
+            os.system(s)
+            s = "sshpass -p " + passwd + " scp -o StrictHostKeyChecking=no " + id + '@' + host + ':' + '~/code/fish/' + project + '/intel-build/build/packages/tiger*.ipk' + ' . '
             print(s)
             os.system(s)
         else :
