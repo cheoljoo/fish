@@ -305,6 +305,7 @@ class CiscoStyleCli:
             if v == '':
                 if self.debug:
                     print("v is empty")
+                    print("root:",root)
                 # newCmd += " "
                 lastWord = ""
                 print(flush=True)
@@ -344,7 +345,23 @@ class CiscoStyleCli:
                     print("matchedCommand:",matchedCommand)
                 if matchedCount == 1 and matchedCommand != "":
                     newCmd = self.cmd + matchedCommand + " "
-                    print()
+                    cmdRoot = root['cmd']
+                    #print()
+                    #print("empty root:",root)
+                    #print("empty cmdRoot:",cmdRoot)
+                    #print("empty cmdRoot[]:",matchedCommand,cmdRoot[matchedCommand])
+                    #root = cmdRoot[matchedCommand]
+                    #cmdRoot = root['cmd']
+                    #print("empty root:",root)
+                    #print("empty cmdRoot:",cmdRoot)
+                    if 'prefunc' in cmdRoot and cmdRoot['prefunc'] :
+                        t = cmdRoot['prefunc']
+                        if self.debug:
+                            print("prefunc",t)
+                            print("funcname:",t)
+                            # print(self.funcTable)
+                            print("retValue:",retValue)
+                        t(retValue)
                     print("press the space bar")
                 break
             lastWord = v
@@ -621,7 +638,8 @@ class RemoteCommand :
     def test(self,onlyEnable=None):
         print('\n'*3)
         for v in self.list:
-            s = "timeout 5 sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' ' + v['command']
+            command = 'cd code/fish; git pull ; source a/bin/activate; python3 cpu.py ; df -h ~'
+            s = "timeout 5 sshpass -p " + v['passwd'] + " ssh -o StrictHostKeyChecking=no " + v['id'] + '@' + v['host'] + ' "' + command + '"'
             print(s)
             if onlyEnable == True and v['enable'] != 'true':
                 continue
@@ -703,7 +721,7 @@ class RemoteCommand :
         host = self.list[choose]['host']
         s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./clean.sh' + '"'
         print(s)
-        # os.system(s)
+        os.system(s)
         
     def setupDownload(self,v=None):
         functionNameAsString = sys._getframe().f_code.co_name
@@ -720,7 +738,7 @@ class RemoteCommand :
         host = self.list[choose]['host']
         s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./down.sh' + '"'
         print(s)
-        # os.system(s)
+        os.system(s)
         
     def setupCompile(self,v=None):
         functionNameAsString = sys._getframe().f_code.co_name
@@ -737,10 +755,10 @@ class RemoteCommand :
         host = self.list[choose]['host']
         s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./run-docker.sh build apps' + '"'
         print(s)
-        # os.system(s)
+        os.system(s)
         s = "sshpass -p " + passwd + " scp -o StrictHostKeyChecking=no " + id + '@' + host + ':' + '~/code/fish/' + project + '/intel-build/build/packages/tiger*.ipk' + ' . '
         print(s)
-        # os.system(s)
+        os.system(s)
         
     def setupBestCompile(self,v=None):
         functionNameAsString = sys._getframe().f_code.co_name
@@ -760,10 +778,10 @@ class RemoteCommand :
             print("host:",bestv['host'])
             s = "sshpass -p " + bestv['passwd'] + " ssh -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; sh ./run-docker.sh build apps' + '"'
             print(s)
-            # os.system(s)
+            os.system(s)
             s = "sshpass -p " + bestv['passwd'] + " scp -o StrictHostKeyChecking=no " + bestv['id'] + '@' + bestv['host'] + ':' + '~/code/fish/' + project + '/intel-build/build/packages/tiger*.ipk' + ' . '
             print(s)
-            # os.system(s)
+            os.system(s)
         else :
             print("All Server is not good.")
         
@@ -792,8 +810,8 @@ class RemoteCommand :
         else :
             print("All Server is not good.")
         
-        # out = os.popen(s).read()
-        # print("out:",out)
+        out = os.popen(s).read()
+        print("out:",out)
         
     def showHost(self,v=None):
         for i,v in enumerate(self.host):
