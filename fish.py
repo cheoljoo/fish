@@ -42,6 +42,10 @@ wordRe = re.compile('^\s*(?P<ans>[^ \n]+)')
 cpusRe = re.compile('^\s*cpu count:\s*(?P<ans>[0-9\-\+\.]+)')
 cpuUsageRe = re.compile('^\s*CPU usage:\s*(?P<ans>[0-9\-\+\.]+)')
 dfRe = re.compile('^\s*/dev/\S+\s+\S+\s+\S+\s+(?P<ans>[0-9\-\+\.]+[MGT]+)')
+newFileRe = re.compile('^\s*new file:\s+(?P<ans>.*)$')
+modifiedRe = re.compile('^\s*modified:\s+(?P<ans>.*)$')
+rootPathRe = re.compile('^===========>__<==ROOT')
+currentPathRe = re.compile('^===========>__<==CURRENT')
 
 
 
@@ -740,6 +744,80 @@ class RemoteCommand :
         print(s)
         os.system(s)
         
+    def setupCopy(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if self.debug:
+            print(self)
+            print("v:",v)
+        project = v['__cmd__'][2]
+        choose = int(v['choose'])
+        print()
+        print("name:",project)
+
+        print('cd ' + project + ' ; echo "===========>__<==ROOT" > repo_status.log')
+        os.system('cd ' + project + ' ; echo "===========>__<==ROOT" > repo_status.log')
+        print('cd ' + project + ' ; pwd >> repo_status.log')
+        os.system('cd ' + project + ' ; pwd >> repo_status.log')
+        print('cd ' + project + ' ; repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+        os.system('cd ' + project + ' ; repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+
+        with open(project + "/repo_status.log", "r" , newline='') as f:
+            lines = f.readlines()
+
+        rootPath = ""
+        currentPath = ""
+        rootPathFlag = False
+        currentPathFlag = False
+        filelist = []
+        for l in lines:
+            if rootPathRe.search(l):
+                grp = rootPathRe.search(l)
+                rootPathFlag = True
+                continue
+            elif currentPathRe.search(l):
+                grp = currentPathRe.search(l)
+                if grp:
+                    currentPathFlag = True
+                    continue
+            elif newFileRe.search(l):
+                grp = newFileRe.search(l)
+                if grp:
+                    filename = str(grp.group('ans')).strip()
+                    filelist.append('.' + currentPath.strip() + '/' + filename.strip())
+            elif modifiedRe.search(l):
+                grp = modifiedRe.search(l)
+                if grp:
+                    filename = str(grp.group('ans'))
+                    filelist.append('.' + currentPath.strip() + "/" + filename.strip())
+            if rootPathFlag:
+                rootPath = l.strip()
+                rootPathFlag = False
+            if currentPathFlag:
+                currentPath = l.strip()
+                currentPath = currentPath.replace(rootPath,"")
+                currentPathFlag = False
+            
+        print("filelist:",filelist)
+        s = 'cd ' + project + ' ; tar cvfz modified.tar.gz ' + ' '.join(filelist)
+        print(s)
+        os.system(s)
+
+        id = self.list[choose]['id']
+        passwd = self.list[choose]['passwd']
+        host = self.list[choose]['host']
+        s = "sshpass -p " + passwd + " scp -o StrictHostKeyChecking=no " + project + '/modified.tar.gz ' + id + '@' + host + ':~/code/fish/' + project
+        print(s)
+        os.system(s)
+
+        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; tar xvfz modified.tar.gz' + '"'
+        print(s)
+        os.system(s)
+
+        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; python3 make_tar_ball.py' + '"'
+        print(s)
+        os.system(s)
+        
     def setupCompile(self,v=None):
         functionNameAsString = sys._getframe().f_code.co_name
         print("functionname:",functionNameAsString)
@@ -888,6 +966,9 @@ if (__name__ == "__main__"):
     downloadCmd = csc.addCmd(setupCmd ,'download','command',"", "download")
     tmp = csc.addCmd(downloadCmd ,'tiger-desktop','command',"", "download in tiger-desktop")
     tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupDownload)
+    copyCmd = csc.addCmd(setupCmd ,'copy','command',"", "modified source copy")
+    tmp = csc.addCmd(copyCmd ,'tiger-desktop','command',"", "copy modified code in tiger-desktop")
+    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCopy)
     compileCmd = csc.addCmd(setupCmd ,'compile','command',"", "compile & copy ipk")
     tmp = csc.addCmd(compileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop")
     tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCompile)
