@@ -1,4 +1,3 @@
-import psutil
 import re
 import os
 

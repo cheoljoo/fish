@@ -814,7 +814,7 @@ class RemoteCommand :
         print(s)
         os.system(s)
 
-        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; cd ' + project + ' ; python3 make_tar_ball.py' + '"'
+        s = "sshpass -p " + passwd + " ssh -o StrictHostKeyChecking=no " + id + '@' + host + ' ' + '"' + 'cd code/fish ; python3 make_tar_ball.py' + '"'
         print(s)
         os.system(s)
         
