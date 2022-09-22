@@ -5,8 +5,8 @@ print('cd tiger-desktop; echo "===========>__<==ROOT" > repo_status.log')
 os.system('cd tiger-desktop; echo "===========>__<==ROOT" > repo_status.log')
 print('cd tiger-desktop; pwd >> repo_status.log')
 os.system('cd tiger-desktop; pwd >> repo_status.log')
-print('cd tiger-desktop; repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
-os.system('cd tiger-desktop; repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+print('cd tiger-desktop; ../repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+os.system('cd tiger-desktop; ../repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
 
 with open("tiger-desktop/repo_status.log", "r" , newline='') as f:
     lines = f.readlines()

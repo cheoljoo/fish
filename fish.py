@@ -759,8 +759,8 @@ class RemoteCommand :
         os.system('cd ' + project + ' ; echo "===========>__<==ROOT" > repo_status.log')
         print('cd ' + project + ' ; pwd >> repo_status.log')
         os.system('cd ' + project + ' ; pwd >> repo_status.log')
-        print('cd ' + project + ' ; repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
-        os.system('cd ' + project + ' ; repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+        print('cd ' + project + ' ; ../repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
+        os.system('cd ' + project + ' ; ../repo forall -c "echo \\"===========>__<==CURRENT\\" ; pwd ; git status --untracked-file=no" >> repo_status.log')
 
         with open(project + "/repo_status.log", "r" , newline='') as f:
             lines = f.readlines()
