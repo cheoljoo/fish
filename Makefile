@@ -11,5 +11,8 @@ work1:
 d:
 	python3 fish.py --debug
 
-m:
-	python3 make_tar_ball.py
+tcmd:
+	python3 fish.py --prompt="TCMD>" --tcmd
+
+infinite:
+	python3 fish.py --infinite

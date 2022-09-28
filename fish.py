@@ -58,13 +58,14 @@ class CiscoStyleCli:
     ch = c.getCh()
     bool = c.setCliRule()
     """
-    def __init__(self,rule=None,infinite=False,debug=False):
+    def __init__(self,rule=None,infinite=False,prompt = "FISH~~:" , debug=False):
         """ 
         초기화 self.remoteCmd
         """
         self.infinite = infinite
         self.debug = debug
         self.c = ''
+        self.prompt = prompt
         if rule and os.path.isfile(rule):
             remoteCmd = {}
             f = open(rule, 'r')
@@ -159,17 +160,17 @@ class CiscoStyleCli:
         if argumentTypeCount > 1 :
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have just 1 argument command type or multiple commands")
-            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         elif argumentTypeCount == 1 and commandTypeCount > 0:
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have just 1 argument.  you should not have any commands type")
-            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         elif anotherTypeCount > 0 :
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have the following type : argument or command")
-            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         return root['cmd'][command]
     def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
@@ -219,17 +220,17 @@ class CiscoStyleCli:
         if argumentTypeCount > 1 :
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have just 1 argument command type or multiple commands")
-            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         elif argumentTypeCount == 1 and commandTypeCount > 0:
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have just 1 argument.  you should not have any commands type")
-            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         elif anotherTypeCount > 0 :
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have the following type : argument or command")
-            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         return root['cmd'][name]
     
@@ -237,19 +238,64 @@ class CiscoStyleCli:
     #     self.funcTable[funcname] = funcptr
     #     if self.debug and funcptr != quit:
     #         funcptr()
+    def _setCliRuleGohRecursive(self,root,topNode):
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug:
+            print("functionname:",functionNameAsString)
+            print("root:",root)
+            print("top:",topNode)
+        for k,v in topNode.items():
+            if k == '__attribute':
+                continue
+            type = 'command'
+            returnable = ""
+            desc = ""
+            argumentType = None
+            if '__attribute' in v:
+                if 'type' in v['__attribute']:
+                    type = v['__attribute']['type']
+                if 'returnable' in v['__attribute']:
+                    returnable = v['__attribute']['returnable']
+                if 'desc' in v['__attribute']:
+                    desc = v['__attribute']['desc']
+                if 'argument-type' in v['__attribute']:
+                    argumentType = v['__attribute']['argument-type']
+            if type == 'argument':
+                tmpRoot = csc.addArgument(root,k,argumentType,returnable,desc)
+            else:
+                tmpRoot = csc.addCmd(root,k,'command',returnable,desc)
+            if ('__attribute' in v and len(v) > 1) or ('__attribute' not in v and len(v) > 0):
+                self._setCliRuleGohRecursive(tmpRoot,v)
+    def setCliRuleGoh(self,top):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        self.remoteCmd = {}
+        self._setCliRuleGohRecursive(self.remoteCmd,top)
         
+        if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
+            quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
+            # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
+        if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
+            listCmd = self.addCmd(self.remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self.list)
+            # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
+        if 'cmd' in self.remoteCmd and 'list-detailed' not in self.remoteCmd['cmd']:
+            listDetailedCmd = self.addCmd(self.remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+        self.checkReturnable(self.remoteCmd)
+        self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
+        self.list()
+
     def setCliRule(self,rule):
         functionNameAsString = sys._getframe().f_code.co_name
         print("functionname:",functionNameAsString)
         self.remoteCmd = rule
         if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
-            quitCmd = self.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
+            quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
             # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
         if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
-            listCmd = self.addCmd(remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self.list)
+            listCmd = self.addCmd(self.remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self.list)
             # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
         if 'cmd' in self.remoteCmd and 'list-detailed' not in self.remoteCmd['cmd']:
-            listDetailedCmd = self.addCmd(remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+            listDetailedCmd = self.addCmd(self.remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
         self.checkReturnable(self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         self.list()
@@ -410,13 +456,16 @@ class CiscoStyleCli:
         print("functionname:",functionNameAsString)
         if v:
             print("v",v)
+        print("ERROR: need your definiation for return function")
         
     def _showRecommendation(self,r,retValue):
         root = r
         functionNameAsString = sys._getframe().f_code.co_name
-        print("functionname:",functionNameAsString , "root:",root)
+        if self.debug :
+            print("functionname:",functionNameAsString , "root:",root)
         if 'returnable' in root and root['returnable'] == 'returnable':
-            print("    <CR> : [returnable]")
+            print("    -> <CR> : [returnable]")
+        
         if 'cmd' in root :
             cmdRoot = root['cmd']
             for s in cmdRoot:
@@ -430,18 +479,19 @@ class CiscoStyleCli:
                     if self.debug:
                         print('prefunc:',cmdRoot[s]['prefunc'])
                         print("retValue:",retValue)
-                    print('prefunc:',cmdRoot[s]['prefunc'])
+                    # print('prefunc:',cmdRoot[s]['prefunc'])
                     cmdRoot[s]['prefunc'](retValue)
-                print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                if t == 'argument' and 'argument-type' in cmdRoot[s] :
+                if self.debug:
+                    print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                print('help: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                if cmdRoot[s]['type'] == 'argument' and 'argument-type' in cmdRoot[s] :
                     ld = cmdRoot[s]['argument-type']
                     if isinstance(ld,list) :
                         for s in ld:
-                            print('    ' + s)
+                            print('    ->' + s)
                     elif isinstance(ld,dict):
                         for s in ld.keys():
-                            print('    ' + str(s) + ' : ' + ld[s])
-                            
+                            print('    ->' + str(s) + ' : ' + ld[s])
                         
 
         # else :
@@ -454,6 +504,7 @@ class CiscoStyleCli:
 
         self.c : current input character
         """
+        print()
         functionNameAsString = sys._getframe().f_code.co_name
         if self.debug : 
             print("functionname:",functionNameAsString)
@@ -519,7 +570,7 @@ class CiscoStyleCli:
                                         self.cmd = newCmd.strip()
                                         retValue['__return__'] = self.cmd.strip().replace('\t',' ')
                                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
-                                retValue[crk] = v
+                                retValue[crk] = { 'choice':v , 'data':mdRoot[crk]['argument-type'] }
                                 root = cmdRoot[crk]
                                 newCmd += v + ' '
                                 continue
@@ -536,7 +587,6 @@ class CiscoStyleCli:
             lastWord = v
             # return : matched returnable
             if self.c == '\n' and 'cmd' in root:
-                print()
                 cmdRoot = root['cmd']
                 if self.debug:
                     print("last matched returnable v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
@@ -564,13 +614,18 @@ class CiscoStyleCli:
                     for crk, crv in cmdRoot.items():
                         if cmdRoot[crk]['type'] == 'argument':
                             matchedFlag = False
+                            data = None
                             if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
                                 if v in cmdRoot[crk]['argument-type']:   # matched
                                     matchedFlag = True
+                                    data = cmdRoot[crk]['argument-type']
                             else:   # matched
                                 matchedFlag = True
                             if matchedFlag : # matched
-                                retValue[crk] = v
+                                if data:
+                                    retValue[crk] = { 'choice':v , 'data':data }
+                                else:
+                                    retValue[crk] = v
                                 root = cmdRoot[crk]
                                 newCmd += v + ' '
                                 retValue['__return__'] = newCmd.strip().replace('\t',' ')
@@ -625,11 +680,12 @@ class CiscoStyleCli:
                     oldCmd = newCmd
                     newCmd += v + " "
                     if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
+                        data = None
                         if 'argument-type' in cmdRoot[focus] and isinstance(cmdRoot[focus]['argument-type'],(list,dict)) :
                             if self.debug:
                                 print("cmdRoot[focus]['argument-type']:", cmdRoot[focus]['argument-type'])
                                 for v in cmdRoot[focus]['argument-type']:
-                                    print("   " , v)
+                                    print("     |->" , v)
                             if v not in cmdRoot[focus]['argument-type']:
                                 temp = v
                                 longestMatch = v
@@ -651,15 +707,18 @@ class CiscoStyleCli:
                                             break
                                     newCmd = oldCmd + longestMatch
                                     print()
-                                    print("recommend list:",flush=True)
+                                    if self.debug:
+                                        print("recommend list :",flush=True)
+                                    print("help list :",flush=True)
                                     for s in cmdRoot[focus]['argument-type']:
-                                        print('    list or dict:',s , flush=True)
-                                    print('choose one from upper list.')
+                                        if longestMatch == s[:len(longestMatch)]:
+                                            print('    ->',s , flush=True)
+                                    # print('choose one from upper list.')
                                     retValue['__return__'] = newCmd.strip().replace('\t',' ')
                                     quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                                     self.cmd = newCmd
                                     # show recommendation
-                                    self._showRecommendation(root,retValue)
+                                    # self._showRecommendation(root,retValue)
                                     if self.debug:
                                         print("longest matched command:",retValue)
                                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
@@ -671,8 +730,13 @@ class CiscoStyleCli:
                                     if self.debug:
                                         print("not matched command:",retValue)
                                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                            else :
+                                data = cmdRoot[focus]['argument-type']
                         root = cmdRoot[focus]
-                        retValue[focus] = v
+                        if data:
+                            retValue[crk] = { 'choice':v , 'data':data }
+                        else:
+                            retValue[focus] = v
                         retValue['__return__'] = newCmd.strip().replace('\t',' ')
                         quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                         self.cmd = newCmd
@@ -769,7 +833,9 @@ class CiscoStyleCli:
                                 returnable = ""
                                 if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
                                     returnable = '[returnable]'
-                                print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                                if self.debug:
+                                    print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                                print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
                             return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
         else :  # cmd == "" 인 경우
             print("ERROR:words length", len(words) , words)
@@ -819,11 +885,11 @@ class CiscoStyleCli:
                 print('lastCmd:', lastCmd , 'retValue:',retValue , 'self.infinite:',self.infinite)
             if isFinishedFromReturn == True and self.infinite == False:
                 return retValue
-            print('input:', self.cmd.replace('\t',' '),end='',sep='',flush=True)
+            print(self.prompt, self.cmd.replace('\t',' '),end='',sep='',flush=True)
             while True:
                 if self.debug:
                     print(flush=True)
-                    print("quoteFlag:",quoteFlag," input:/",self.cmd.replace("\t"," "),"/",self.cmd.replace("\t"," "),sep="",end="",flush=True)
+                    print("quoteFlag:",quoteFlag," ",self.prompt,"/",self.cmd.replace("\t"," "),"/",self.cmd.replace("\t"," "),sep="",end="",flush=True)
                 c = self.getch()
                 self.c = c
                 
@@ -1262,7 +1328,14 @@ if (__name__ == "__main__"):
 
     parser.add_argument("-t", "--test", action="store_true",default=False,help='show the command but not run it for test & debug')
     parser.add_argument("-d", "--debug", action="store_true",default=False,help='show the command but not run it for test & debug')
-    parser.add_argument("--infinite", action="store_true",default=False,help='show the command but not run it for test & debug')
+    parser.add_argument("--infinite", action="store_true",default=False,help='CiscoStyleCLI has infinite loop')
+    parser.add_argument("--tcmd", action="store_true",default=False,help="use tcmd's command architecture to make a tree")
+    parser.add_argument(
+        '--prompt',
+        metavar="<str>",
+        type=str,
+        default="FISH~~:",
+        help='your prompt  default :  FISH~~:')
     parser.add_argument(
         '--csvfile',
         metavar="<csvfile>",
@@ -1276,87 +1349,128 @@ if (__name__ == "__main__"):
         default="rule.py",
         help='python data file to make a command line rule')
     
-    parser.add_argument('X', type=str, nargs='+')
+    parser.add_argument('X', type=str, nargs='*')
 
     args = parser.parse_args()
 
     X_list = args.X
     print("argv:",X_list)
 
-    csc = CiscoStyleCli(rule = args.rulefile , infinite = args.infinite , debug = args.debug)
+    csc = CiscoStyleCli(rule = args.rulefile , infinite = args.infinite , prompt = args.prompt, debug = args.debug)
     rc = RemoteCommand(csvfile=args.csvfile,debug = args.debug)
     
-    remoteCmd = {}
-    # register CL cheoljoo.lee lotto645.com akstp! ./desktop/image cheoljoo.lee@gmail.com [return]
-    registerCmd = csc.addCmd(remoteCmd,'register','command',"","registration command (id , host , passwd , etc)")
-    tmp = csc.addArgument(registerCmd,'name','str' , "", "system nickname ")
-    tmp = csc.addArgument(tmp,'id','str',"", "login id")
-    tmp = csc.addArgument(tmp,'host','str',"", "hostname")
-    tmp = csc.addArgument(tmp,'passwd','str',"", "password")
-    tmp = csc.addArgument(tmp,'directory','str',"", "output directory")
-    tmp = csc.addArgument(tmp,'email','str',"", "email address")
-    tmp = csc.addArgument(tmp,'command','str',"", "commands for site")
-    # enable : now i do not use it
-    enableCmd = csc.addCmd(remoteCmd,'enable','command',"", "change to enable status : you can use this system")
-    tmp = csc.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.enableTable)
-    # disable : now i do not use it
-    disableCmd = csc.addCmd(remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
-    tmp = csc.addArgument(disableCmd,'choose','int',"", "choose number from the list",prefunc=rc.listTable)
-    # list [return] : no arguments
-    # listCmd = csc.addCmd(remoteCmd,'list','command',"returnable", "show system list")
-    # cmd "ls -al \"*.sh\" ; ls "
-    # runCmd = csc.addCmd(remoteCmd,'run','command',"", "execute command with quoted string")
-    # tmp = csc.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
-    # test [return]  <- use it now to check server's status
-    testCmd = csc.addCmd(remoteCmd,'test','command',"", "test : send command ls -al for each server")
-    twoskipCmd = csc.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
-    threeCmd = csc.addCmd(twoskipCmd ,'three','command',"", "three follows test")
-    # test sldd hmi 4 5 [return]
-    slddCmd = csc.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
-    stopCmd = csc.addCmd(slddCmd ,'stop','command',"returnable", "stop follows sldd")
-    helpCmd = csc.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
-    hmiCmd = csc.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
-    tmp = csc.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
-    tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer",prefunc=lambda x: print("prefunc:",x))
-    # setup
-    setupCmd = csc.addCmd(remoteCmd,'setup','command',"returnable", "setup clean or download in all enabled server",returnfunc=rc.test)
-    cleanCmd = csc.addCmd(setupCmd ,'clean','command',"", "clean-up")
-    tmp = csc.addCmd(cleanCmd ,'tiger-desktop','command',"", "clean in tiger-desktop")
-    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupClean)
-    downloadCmd = csc.addCmd(setupCmd ,'download','command',"", "download")
-    tmp = csc.addCmd(downloadCmd ,'tiger-desktop','command',"", "download in tiger-desktop")
-    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupDownload)
-    copyCmd = csc.addCmd(setupCmd ,'copy','command',"", "modified source copy")
-    tmp = csc.addCmd(copyCmd ,'tiger-desktop','command',"", "copy modified code in tiger-desktop")
-    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCopy)
-    compileCmd = csc.addCmd(setupCmd ,'compile','command',"", "compile & copy ipk")
-    tmp = csc.addCmd(compileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop")
-    tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCompile)
-    bestCompileCmd = csc.addCmd(setupCmd ,'bestcompile','command',"", "compile & copy ipk in best status server")
-    tmp = csc.addCmd(bestCompileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop",returnfunc=rc.setupBestCompile)
-    # quit
-    # quitCmd = csc.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=quit)
-    # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=quit)
-    # run [return]  <- use it now to check server's status
-    runCmd = csc.addCmd(remoteCmd,'run','command',"", "run download or compile")
-    downloadCmd = csc.addCmd(runCmd,'download','command',"", "run download")
-    tigerDesktopCmd = csc.addArgument(downloadCmd ,'model',['tiger-desktop'],"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
-    compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
-    tigerDesktopCmd = csc.addArgument(compileCmd ,'model',['tiger-desktop','bmw'],"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
-    
-    gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
-    tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-    tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-    tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-    tmp = csc.addArgument(tmp,'number',['cheetah','tiger','fish'],"returnable", "type from the list",returnfunc=csc.common)
-    tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-    tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary",returnfunc=csc.common)
-    
-    
-    
-    csc.setCliRule(remoteCmd)
-    # csc.setFunc("listTable",rc.listTable)
-    # csc.setFunc("quit",quit)
+
+    # args.tcmd = True
+    if args.tcmd:
+        TOP = {}
+        projectList = ['tiger','cheetah','fish']
+        TOP ['register'] = {
+            '__attribute' : {
+                'type' : "command",
+                'desc' : "registration~~",
+                'returnable' : "returnable"
+                },
+            'name' : {
+                '__attribute' : {
+                    'type' : "command",
+                    'desc' : "name~~",
+                    'returnable' : "",
+                }
+            },
+            'target' : {
+                'next-target' : {}
+            },
+            'target2' : {
+                'next2-target' : {
+                    '__attribute' : {
+                        'desc' : "next target",
+                        'returnable' : "",
+                    }
+                }
+            },
+            'vbee' : {
+                'project' : {
+                    '__attribute' : {
+                        'desc' : "choose from list",
+                        'type' : 'argument',
+                        'argument-type' : projectList
+                    }
+                }
+            }
+        }
+        csc.setCliRuleGoh(TOP)
+    else:
+        remoteCmd = {}
+        # register CL cheoljoo.lee lotto645.com akstp! ./desktop/image cheoljoo.lee@gmail.com [return]
+        registerCmd = csc.addCmd(remoteCmd,'register','command',"","registration command (id , host , passwd , etc)")
+        tmp = csc.addArgument(registerCmd,'name','str' , "", "system nickname ")
+        tmp = csc.addArgument(tmp,'id','str',"", "login id")
+        tmp = csc.addArgument(tmp,'host','str',"", "hostname")
+        tmp = csc.addArgument(tmp,'passwd','str',"", "password")
+        tmp = csc.addArgument(tmp,'directory','str',"", "output directory")
+        tmp = csc.addArgument(tmp,'email','str',"", "email address")
+        tmp = csc.addArgument(tmp,'command','str',"", "commands for site")
+        # enable : now i do not use it
+        enableCmd = csc.addCmd(remoteCmd,'enable','command',"", "change to enable status : you can use this system")
+        tmp = csc.addArgument(enableCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.enableTable)
+        # disable : now i do not use it
+        disableCmd = csc.addCmd(remoteCmd,'disable','command',"", "change to disable status : you can not use this system")
+        tmp = csc.addArgument(disableCmd,'choose','int',"", "choose number from the list",prefunc=rc.listTable)
+        # list [return] : no arguments
+        # listCmd = csc.addCmd(remoteCmd,'list','command',"returnable", "show system list")
+        # cmd "ls -al \"*.sh\" ; ls "
+        # runCmd = csc.addCmd(remoteCmd,'run','command',"", "execute command with quoted string")
+        # tmp = csc.addArgument(runCmd,'run','quotestr',"returnable", "execution string ex) \"cd HOME; ls -al\"")
+        # test [return]  <- use it now to check server's status
+        testCmd = csc.addCmd(remoteCmd,'test','command',"", "test : send command ls -al for each server")
+        twoskipCmd = csc.addCmd(testCmd ,'twoskip','command',"", "twoskip follows test")
+        threeCmd = csc.addCmd(twoskipCmd ,'three','command',"", "three follows test")
+        # test sldd hmi 4 5 [return]
+        slddCmd = csc.addCmd(testCmd ,'sldd','command',"", "sldd follows test")
+        stopCmd = csc.addCmd(slddCmd ,'stop','command',"returnable", "stop follows sldd")
+        helpCmd = csc.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
+        hmiCmd = csc.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
+        tmp = csc.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
+        tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer",prefunc=lambda x: print("prefunc:",x))
+        # setup
+        setupCmd = csc.addCmd(remoteCmd,'setup','command',"returnable", "setup clean or download in all enabled server",returnfunc=rc.test)
+        cleanCmd = csc.addCmd(setupCmd ,'clean','command',"", "clean-up")
+        tmp = csc.addCmd(cleanCmd ,'tiger-desktop','command',"", "clean in tiger-desktop")
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupClean)
+        downloadCmd = csc.addCmd(setupCmd ,'download','command',"", "download")
+        tmp = csc.addCmd(downloadCmd ,'tiger-desktop','command',"", "download in tiger-desktop")
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupDownload)
+        copyCmd = csc.addCmd(setupCmd ,'copy','command',"", "modified source copy")
+        tmp = csc.addCmd(copyCmd ,'tiger-desktop','command',"", "copy modified code in tiger-desktop")
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCopy)
+        compileCmd = csc.addCmd(setupCmd ,'compile','command',"", "compile & copy ipk")
+        tmp = csc.addCmd(compileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop")
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "choose number from the list",prefunc=rc.listTable,returnfunc=rc.setupCompile)
+        bestCompileCmd = csc.addCmd(setupCmd ,'bestcompile','command',"", "compile & copy ipk in best status server")
+        tmp = csc.addCmd(bestCompileCmd ,'tiger-desktop','command',"", "compile and copy ipk in tiger-desktop",returnfunc=rc.setupBestCompile)
+        # quit
+        # quitCmd = csc.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=quit)
+        # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=quit)
+        # run [return]  <- use it now to check server's status
+        runCmd = csc.addCmd(remoteCmd,'run','command',"", "run download or compile")
+        downloadCmd = csc.addCmd(runCmd,'download','command',"", "run download")
+        tigerDesktopCmd = csc.addArgument(downloadCmd ,'model',['tiger-desktop'],"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
+        compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
+        tigerDesktopCmd = csc.addArgument(compileCmd ,'model',['tiger-desktop','bmw'],"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
+        
+        gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
+        tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+        tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+        tmp = csc.addArgument(tmp,'number',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list",returnfunc=csc.common)
+        tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+        tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary",returnfunc=csc.common)
+        
+        
+        
+        csc.setCliRule(remoteCmd)
+        # csc.setFunc("listTable",rc.listTable)
+        # csc.setFunc("quit",quit)
 
     if args.X:
         x = ' '.join(args.X)

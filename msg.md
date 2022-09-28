@@ -41,4 +41,46 @@
 - checkCmd를 call해주면됨
 - parser.add_argument('X', type=str, nargs='+')
 
+-----------------------
+2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-14192 : (tcmd type command) seungdae.goh's command architecture   
 
+[VLM] TIGER-14192
+```
+Cisco style  dict  입력  변경 건의 드립니다.
+1 >  '__attribute' 를 keyword 으로 사용 
+TOP ['register'] = {
+    '__attribute' : {
+        'type' : "command"
+        'returnable' : ""
+        'desc' : "registration~~"
+        'returnable' : ""
+        },
+    'name' : { 
+        '__attribute' : {
+            'type' : "command"
+            'returnable' : ""
+            'desc' : "name~~"
+            'returnable' : ""
+        },
+        'target' : {
+            ...
+        }
+    },
+}
+
+
+2  >  attribue 기본 (default) 값은 생략 가능 하며,   return 함수 지정 
+TOP['build'] = {
+    'tyt_24dcm' : { 
+        '__attribute' : {
+            'desc' : "registration~~"
+            'retrurnfunc' :   rc.show  or  rc.default_exec    # // call  python function  :  default_exec ( arg all )    -->  "shell command"
+        'target' : {
+        }
+```
+- --prompt option
+- --tcmd option : seungdae.goh 's request for tcmd
+- retValue 형식 변경
+  - ```v {'__cmd__': ['gethost', 'choose2'], 'number': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}```
+  - ```v {'__cmd__': ['gethost', 'choose1'], 'choose': '0', '__return__': 'gethost choose1 0'}```
+  - ```v {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '1', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 1'}```
