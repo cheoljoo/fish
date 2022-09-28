@@ -58,10 +58,11 @@ class CiscoStyleCli:
     ch = c.getCh()
     bool = c.setCliRule()
     """
-    def __init__(self,rule=None,debug=False):
+    def __init__(self,rule=None,infinite=False,debug=False):
         """ 
         초기화 self.remoteCmd
         """
+        self.infinite = infinite
         self.debug = debug
         self.c = ''
         if rule and os.path.isfile(rule):
@@ -116,7 +117,9 @@ class CiscoStyleCli:
         
         if self.debug :
             print("remoteCmd:",self.remoteCmd)
+        self.checkReturnable(self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
+        self.list()
         
     def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
         """ 
@@ -124,6 +127,7 @@ class CiscoStyleCli:
         root['cmd'][command]['cmd'] = {} # if you need more command
         return root['cmd'][command]
         """
+        functionNameAsString = sys._getframe().f_code.co_name
         if 'cmd' not in root:
             root['cmd'] = {}
         root['cmd'][command] = {}
@@ -141,6 +145,32 @@ class CiscoStyleCli:
             root['cmd'][command]['returnfunc'] = returnfunc
         if chooseList :
             root['cmd'][command]['chooseList'] = chooseList
+        # check the rule : 1 arugment or all commands
+        argumentTypeCount = 0
+        commandTypeCount = 0
+        anotherTypeCount = 0
+        for cmd in root['cmd']:
+            if root['cmd'][command]['type'] == 'argument':
+                argumentTypeCount += 1
+            elif root['cmd'][command]['type'] == 'command':
+                commandTypeCount += 1
+            else:
+                anotherTypeCount += 1
+        if argumentTypeCount > 1 :
+            print("functionname:",functionNameAsString, locals())
+            print("ERROR: you should have just 1 argument command type or multiple commands")
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            quit()
+        elif argumentTypeCount == 1 and commandTypeCount > 0:
+            print("functionname:",functionNameAsString, locals())
+            print("ERROR: you should have just 1 argument.  you should not have any commands type")
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            quit()
+        elif anotherTypeCount > 0 :
+            print("functionname:",functionNameAsString, locals())
+            print("ERROR: you should have the following type : argument or command")
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            quit()
         return root['cmd'][command]
     def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
         """ 
@@ -148,11 +178,20 @@ class CiscoStyleCli:
         root['cmd'][name]['argument-type'] = type
         root['cmd'][name]['cmd'] = {} # if you need more command
         """
+        functionNameAsString = sys._getframe().f_code.co_name
         if 'cmd' not in root:
             root['cmd'] = {}
         root['cmd'][name] = {}
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
+        if isinstance(type,dict):
+            for i,v in type.items():
+                if not isinstance(i,str):
+                    print("key of dictionary should be string type : " , i , ":",  type)
+                    quit()
+                if not isinstance(v,str):
+                    print("value of dictionary should be string type : " ,v , ":", type)
+                    quit()
         root['cmd'][name]['returnable'] = returnable
         root['cmd'][name]['desc'] = desc
         if additionalDict:
@@ -166,6 +205,32 @@ class CiscoStyleCli:
             root['cmd'][name]['returnfunc'] = returnfunc
         if chooseList:
             root['cmd'][name]['chooseList'] = chooseList
+        # check the rule : 1 arugment or all commands
+        argumentTypeCount = 0
+        commandTypeCount = 0
+        anotherTypeCount = 0
+        for cmd in root['cmd']:
+            if root['cmd'][name]['type'] == 'argument':
+                argumentTypeCount += 1
+            elif root['cmd'][name]['type'] == 'command':
+                commandTypeCount += 1
+            else:
+                anotherTypeCount += 1
+        if argumentTypeCount > 1 :
+            print("functionname:",functionNameAsString, locals())
+            print("ERROR: you should have just 1 argument command type or multiple commands")
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            quit()
+        elif argumentTypeCount == 1 and commandTypeCount > 0:
+            print("functionname:",functionNameAsString, locals())
+            print("ERROR: you should have just 1 argument.  you should not have any commands type")
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            quit()
+        elif anotherTypeCount > 0 :
+            print("functionname:",functionNameAsString, locals())
+            print("ERROR: you should have the following type : argument or command")
+            print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCound,"others#:",anotherTypeCount)
+            quit()
         return root['cmd'][name]
     
     # def setFunc(self,funcname,funcptr):
@@ -174,6 +239,8 @@ class CiscoStyleCli:
     #         funcptr()
         
     def setCliRule(self,rule):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
         self.remoteCmd = rule
         if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
             quitCmd = self.addCmd(remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self.quit)
@@ -183,27 +250,29 @@ class CiscoStyleCli:
             # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
         if 'cmd' in self.remoteCmd and 'list-detailed' not in self.remoteCmd['cmd']:
             listDetailedCmd = self.addCmd(remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+        self.checkReturnable(self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
+        self.list()
     
     def quit(self,v=None):
         print("byebye!!   see you again~~   *^^*")
         quit()
     
-    def list(self,v):
+    def list(self,v=None):
         self.tlist = []
         functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
         if self.debug:
-            print("functionname:",functionNameAsString)
             print(self,v)
         self.traverseList(self.remoteCmd,"")
         for s in self.tlist:
             print(s)
         print()
-    def listDetailed(self,v):
+    def listDetailed(self,v=None):
         self.tlist = []
         functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
         if self.debug:
-            print("functionname:",functionNameAsString)
             print(self,v)
         self.traverseList(self.remoteCmd,"",detailed=True)
         for s in self.tlist:
@@ -217,7 +286,7 @@ class CiscoStyleCli:
                 for k, v in v2.items():
                     rt = " "
                     if 'returnable' in v and v['returnable'] == 'returnable':
-                        rt = ' [leaf]'
+                        rt = ' <CR>'
                     if self.debug:
                         print("show:",rt,k,v)
                     if detailed:
@@ -231,7 +300,7 @@ class CiscoStyleCli:
                             self.traverseList(v,start + " (commands) " + prefunc + k  + returnfunc + rt,detailed=True)
                         else:
                             argtype = v['argument-type']
-                            self.traverseList(v,start + " (argument:" + argtype +") " + prefunc + k + returnfunc + rt,detailed=True)
+                            self.traverseList(v,start + " (argument:" + str(argtype) +") " + prefunc + k + returnfunc + rt,detailed=True)
                     else:
                         if 'type' in v and v['type'] != 'argument': 
                             self.traverseList(v,start + " (commands) " + k  + rt)
@@ -266,113 +335,271 @@ class CiscoStyleCli:
                 if '__additionalDict__' not in _to:
                     _to['__additionalDict__'] = {}
                 _to['__additionalDict__'][adk] = adv
-    def checkCmd(self,cmd):
+    def _changeQuoteFlag(self,quoteFlag,s = None):
+        if s == None:
+            if quoteFlag == False:
+                quoteFlag = True
+            else :
+                quoteFlag = False
+        else :
+            quoteFlag = False
+            i = 0
+            for c in s:
+                if i == 0 and c == '"':
+                    quoteFlag = self._changeQuoteFlag(quoteFlag)
+                elif i > 0 and c == '"' and s[i-1] != "\\":
+                    quoteFlag = self._changeQuoteFlag(quoteFlag)
+                i += 1
+        return quoteFlag
+    def findRoot(self,cmd):
         """ 
-        check whether this cmd is right
-        return the location from rootCmd following cmd  for guiding current and next arguments
+        while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
+        'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
+        prevCmd = 'gethost'가 들어가면 안성맞춤이다.
         """
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug : 
+            print("functionname:",functionNameAsString)
         retValue = {}
         retCmdList = []
         retLiteralCmdList = []
-        words = cmd.split(' ')
-        # print("key:/",self.c,"/",sep="")
-        if cmd == "" and (self.c == ' ' or self.c == '\t'):
-            words = []
-            if 'cmd' in self.remoteCmd:
-                cmdRoot = self.remoteCmd['cmd']
-                print(flush=True)
-                print("recommend: ",end="",flush=True)
-                for s in cmdRoot.keys():
-                    print(s," ",end="",flush=True)
-                print(flush=True)
-                for s in cmdRoot.keys():
-                    t = 'argument'
-                    if cmdRoot[s]['type'] != 'argument':
-                        t = 'command'
-                    returnable = ""
-                    if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
-                        returnable = '[returnable]'
-                    print('    recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
-        # print("kkk")
+        words = cmd.strip().split(' ')
         root = self.remoteCmd
-        if self.debug:
-            print("checkCmd:words:",words)
         lastWord = ""
         newCmd = ""
+        #if self.cmd == "":
+        #    return (root,lastWord,retValue,quoteFlag)
+        #elif self.cmd[0] == ' ':        # self.cmd != ""
+        #    return (root,lastWord,retValue,quoteFlag)
+        # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
+        # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
+        # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
         while len(words):
+            prevRoot = root
             v = words.pop(0)
+            lastWord = v
             if self.debug:
                 print("get word : v :",v)
                 print("root:",root)
                 print("words:",words)
                 print("retValue:",retValue)
-            if v == '':
-                if self.debug:
-                    print("v is empty")
-                    print("root:",root)
-                # newCmd += " "
-                lastWord = ""
-                print(flush=True)
-                print(flush=True)
-                print(flush=True)
-                matchedCount = 0
-                if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
-                    matchedCount += 1
-                    print('recommend: <CR>',flush=True)
-                matchedCommand = ""
+            if words :  # 마지막 word가 아니면 
                 if 'cmd' in root:
-                    for s in root['cmd'].keys():
-                        matchedCount += 1
-                        cmdRoot = root['cmd']
-                        t = 'argument'
-                        if cmdRoot[s]['type'] != 'argument':
-                            t = 'command'
-                            matchedCommand = s
-                        elif 'chooseList' in cmdRoot[s]:
-                            for ci,cv in enumerate(cmdRoot[s]['chooseList']):
-                                print("ci:",ci,cv)
-                        returnable = ""
-                        if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
-                            returnable = '[returnable]'
-                        self.copyAdditionalDict(cmdRoot[s],retValue)
-                        print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] , returnable , flush=True)
-                        if 'prefunc' in cmdRoot[s] and cmdRoot[s]['prefunc'] :
-                            t = cmdRoot[s]['prefunc']
-                            if self.debug:
-                                print("prefunc",t)
-                                print("funcname:",t)
-                                # print(self.funcTable)
-                                print("retValue:",retValue)
-                            t(retValue)
-                if self.debug:
-                    print("matchedCount:",matchedCount)
-                    print("matchedCommand:",matchedCommand)
-                if matchedCount == 1 and matchedCommand != "":
-                    newCmd = self.cmd + matchedCommand + " "
                     cmdRoot = root['cmd']
-                    #print()
-                    #print("empty root:",root)
-                    #print("empty cmdRoot:",cmdRoot)
-                    #print("empty cmdRoot[]:",matchedCommand,cmdRoot[matchedCommand])
-                    #root = cmdRoot[matchedCommand]
-                    #cmdRoot = root['cmd']
-                    #print("empty root:",root)
-                    #print("empty cmdRoot:",cmdRoot)
-                    if 'prefunc' in cmdRoot and cmdRoot['prefunc'] :
-                        t = cmdRoot['prefunc']
-                        if self.debug:
-                            print("prefunc",t)
-                            print("funcname:",t)
-                            # print(self.funcTable)
-                            print("retValue:",retValue)
-                        t(retValue)
-                    print("press the space bar")
-                break
+                    if self.debug:
+                        print("v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
+                    # matched command
+                    if v in cmdRoot and cmdRoot[v]['type'] == 'command':
+                        root = cmdRoot[v]
+                        newCmd += v + ' '
+                        continue
+                    # matched argument
+                    for crk, crv in cmdRoot.items():
+                        if cmdRoot[crk]['type'] == 'argument':
+                            if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
+                                if v not in cmdRoot[crk]['argument-type']:
+                                    returnValue = -1
+                                    return (returnValue,prevRoot,root,lastWord,newCmd)  # returnValue == -1 : not matched
+                            root = cmdRoot[crk]
+                            newCmd += v + ' '
+                            continue
+                returnValue = -1
+                return (returnValue,prevRoot,root,lastWord,newCmd) # returnValue == -1 : not matched
+    def common(self,v=None):
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if v:
+            print("v",v)
+        
+    def _showRecommendation(self,r,retValue):
+        root = r
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString , "root:",root)
+        if 'returnable' in root and root['returnable'] == 'returnable':
+            print("    <CR> : [returnable]")
+        if 'cmd' in root :
+            cmdRoot = root['cmd']
+            for s in cmdRoot:
+                t = 'argument'
+                if cmdRoot[s]['type'] != 'argument':
+                    t = 'command'
+                returnable = ""
+                if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
+                    returnable = '[returnable]'
+                if 'prefunc' in cmdRoot[s] and cmdRoot[s]['prefunc']:
+                    if self.debug:
+                        print('prefunc:',cmdRoot[s]['prefunc'])
+                        print("retValue:",retValue)
+                    print('prefunc:',cmdRoot[s]['prefunc'])
+                    cmdRoot[s]['prefunc'](retValue)
+                print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                if t == 'argument' and 'argument-type' in cmdRoot[s] :
+                    ld = cmdRoot[s]['argument-type']
+                    if isinstance(ld,list) :
+                        for s in ld:
+                            print('    ' + s)
+                    elif isinstance(ld,dict):
+                        for s in ld.keys():
+                            print('    ' + str(s) + ' : ' + ld[s])
+                            
+                        
+
+        # else :
+        #     print(" this is leaf node")
+
+    def checkCmd(self,cmd):
+        """ 
+        check whether this cmd is right
+        return the location from rootCmd following cmd  for guiding current and next arguments
+
+        self.c : current input character
+        """
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug : 
+            print("functionname:",functionNameAsString)
+
+        retValue = {}
+        retCmdList = []
+        retLiteralCmdList = []
+        words = cmd.strip().split(' ')
+        quoteFlag = False
+        isFinishedFromReturn = False
+        if self.debug:
+            print("cmd:[",self.cmd,"]",sep="")
+            print("checkCmd:words:",words)
+        # for w in words:
+        #     i = 0
+        #     for s in w:
+        #         if i == 0 and s == '"':
+        #             quoteFlag = self._changeQuoteFlag(quoteFlag)
+        #         elif i > 0 and s == '"' and w[i-1] != "\\":
+        #             quoteFlag = self._changeQuoteFlag(quoteFlag)
+        #         i += 1
+
+        root = self.remoteCmd
+        lastWord = ""
+        newCmd = ""
+        #if self.cmd == "":
+        #    return (root,lastWord,retValue,quoteFlag)
+        #elif self.cmd[0] == ' ':        # self.cmd != ""
+        #    return (root,lastWord,retValue,quoteFlag)
+        # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
+        # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
+        # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
+        while len(words) > 1:
+            prevRoot = root
+            v = words.pop(0)
             lastWord = v
+            if self.debug:
+                print("get word : v :",v)
+                print("root:",root)
+                print("words:",words)
+                print("retValue:",retValue)
+            if words :  # 마지막 word가 아니면 
+                if 'cmd' in root:
+                    cmdRoot = root['cmd']
+                    if self.debug:
+                        print("v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
+                    # matched command
+                    if v in cmdRoot and cmdRoot[v]['type'] == 'command':
+                        root = cmdRoot[v]
+                        newCmd += v + ' '
+                        retCmdList.append(v)  # command
+                        retValue['__cmd__'] = retCmdList
+                        continue
+                    # matched argument
+                    else:
+                        for crk, crv in cmdRoot.items():
+                            if cmdRoot[crk]['type'] == 'argument':
+                                if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
+                                    if v not in cmdRoot[crk]['argument-type']:
+                                        # returnValue = -1
+                                        # return (returnValue,prevRoot,root,lastWord,newCmd)  # returnValue == -1 : not matched
+                                        quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                                        self.cmd = newCmd.strip()
+                                        retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                        return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                                retValue[crk] = v
+                                root = cmdRoot[crk]
+                                newCmd += v + ' '
+                                continue
+                else:
+                    # returnValue = -1
+                    # return (returnValue,prevRoot,root,lastWord,newCmd) # returnValue == -1 : not matched
+                    quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                    self.cmd = newCmd
+                    retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                    return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+        # last word of command
+        if words and len(words) == 1:
+            v = words.pop(0)
+            lastWord = v
+            # return : matched returnable
+            if self.c == '\n' and 'cmd' in root:
+                print()
+                cmdRoot = root['cmd']
+                if self.debug:
+                    print("last matched returnable v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
+                # matched command
+                if v in cmdRoot and cmdRoot[v]['type'] == 'command':
+                    root = cmdRoot[v]
+                    newCmd += v + ' '
+                    retCmdList.append(v)  # command
+                    retValue['__cmd__'] = retCmdList
+                    retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                    if 'returnable' in root and root['returnable'] == 'returnable':
+                        if 'returnfunc' in root and root['returnfunc']:
+                            if self.debug:
+                                print('returnfunc:',root['returnfunc'])
+                                print("retValue:",retValue)
+                            print('returnfunc',root['returnfunc'])
+                            root['returnfunc'](retValue)
+                        self.cmd = ""
+                        if self.debug:
+                            print("matched command:",retValue)
+                        isFinishedFromReturn = True
+                        return (root,lastWord,retValue,False,isFinishedFromReturn)
+                # matched argument
+                else : 
+                    for crk, crv in cmdRoot.items():
+                        if cmdRoot[crk]['type'] == 'argument':
+                            matchedFlag = False
+                            if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
+                                if v in cmdRoot[crk]['argument-type']:   # matched
+                                    matchedFlag = True
+                            else:   # matched
+                                matchedFlag = True
+                            if matchedFlag : # matched
+                                retValue[crk] = v
+                                root = cmdRoot[crk]
+                                newCmd += v + ' '
+                                retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                                if self.debug:
+                                    print("matched argument or list/dict :",retValue)
+                                if 'returnable' in root and root['returnable'] == 'returnable':
+                                    if 'returnfunc' in root and root['returnfunc']:
+                                        if self.debug:
+                                            print('returnfunc',root['returnfunc'])
+                                            print("retValue:",retValue)
+                                        print('returnfunc',root['returnfunc'])
+                                        root['returnfunc'](retValue)
+                                    self.cmd = ""
+                                    if self.debug:
+                                        print("matched command:",retValue)
+                                    isFinishedFromReturn = True
+                                    return (root,lastWord,retValue,False,isFinishedFromReturn)
+
+
+            # return : not matched returnable or space : recommendate next string
+            if self.debug:
+                print("last not matched returnable v:",v,"root:",root)
+            # if 'returnable' in root and root['returnable'] == 'returnable':
+            #     print("recommend : <CR> -" , root['desc'])
             if 'cmd' in root:
                 cmdRoot = root['cmd']
                 if self.debug:
-                    print("v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
+                    print("not matched returnable v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
+                focusType = ''
                 focus = ""
                 matched = []
                 for crk, crv in cmdRoot.items():
@@ -380,125 +607,197 @@ class CiscoStyleCli:
                         if self.debug :
                             print("argument cmd :",v , "type:" , cmdRoot[crk]['type'], "ar type:" , cmdRoot[crk]['argument-type'] , "next keys:", cmdRoot.keys())
                         focus = crk
-                    else:
+                        focusType = cmdRoot[crk]['type']
+                        break
+                    else:   # command
                         if v == crk:
                             if self.debug :
                                 print("exact matched cmd key:",crk)
                             focus = crk
+                            focusType = cmdRoot[crk]['type']
                         if v == crk[:len(v)] :
                             if self.debug :
                                 print("matched cmd key:",crk)
                             matched.append(crk)
-                if focus and len(matched) <= 1:
+                # 우리는 focusType (즉, argument , command)로 나누어 처리한다. 
+                # argument일때는 딱 1개만 존재하게 되고, argument와 command가 같이 있다면 무조건 argument가 우선순위가 높다.
+                if focusType == 'argument':
+                    oldCmd = newCmd
                     newCmd += v + " "
-                    root = cmdRoot[focus]
                     if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
+                        if 'argument-type' in cmdRoot[focus] and isinstance(cmdRoot[focus]['argument-type'],(list,dict)) :
+                            if self.debug:
+                                print("cmdRoot[focus]['argument-type']:", cmdRoot[focus]['argument-type'])
+                                for v in cmdRoot[focus]['argument-type']:
+                                    print("   " , v)
+                            if v not in cmdRoot[focus]['argument-type']:
+                                temp = v
+                                longestMatch = v
+                                arguMatched = []
+                                for atv in cmdRoot[focus]['argument-type']:
+                                    if v == atv[:len(v)]:
+                                        arguMatched.append(atv)
+                                if arguMatched:
+                                    for c in arguMatched[0][len(v):]:
+                                        temp += c
+                                        longestMatchFlag = True
+                                        for m in arguMatched:
+                                            if temp != m[:len(temp)] :
+                                                longestMatchFlag = False
+                                                break
+                                        if longestMatchFlag == True:
+                                            longestMatch = temp
+                                        else :
+                                            break
+                                    newCmd = oldCmd + longestMatch
+                                    print()
+                                    print("recommend list:",flush=True)
+                                    for s in cmdRoot[focus]['argument-type']:
+                                        print('    list or dict:',s , flush=True)
+                                    print('choose one from upper list.')
+                                    retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                                    quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                                    self.cmd = newCmd
+                                    # show recommendation
+                                    self._showRecommendation(root,retValue)
+                                    if self.debug:
+                                        print("longest matched command:",retValue)
+                                    return (root,lastWord,retValue,quoteFlag)
+                                else : 
+                                    newCmd = oldCmd
+                                    retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                                    quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                                    self.cmd = newCmd
+                                    if self.debug:
+                                        print("not matched command:",retValue)
+                                    return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                        root = cmdRoot[focus]
                         retValue[focus] = v
-                        if 'chooseList' in cmdRoot[focus]:
-                            retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
-                        else : 
-                            retLiteralCmdList.append(v)
-                        retValue['__literal_cmd__'] = retLiteralCmdList
-                    else:
+                        retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                        quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                        self.cmd = newCmd
+                        # show recommendation
+                        self._showRecommendation(root,retValue)
+                        if self.debug:
+                            print("matched command:",retValue)
+                        return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                        # if 'chooseList' in cmdRoot[focus]:
+                        #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                        # else : 
+                        #     retLiteralCmdList.append(v)
+                        # retValue['__literal_cmd__'] = retLiteralCmdList
+                    # self.copyAdditionalDict(cmdRoot[focus],retValue)
+                else: # command
+                    if focus and len(matched) <= 1:  # command중에 딱 맞는게 있다.
+                        newCmd += v + " "
+                        root = cmdRoot[focus]
                         retCmdList.append(v)  # command
                         retValue['__cmd__'] = retCmdList
-                        if 'chooseList' in cmdRoot[focus]:
-                            retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
-                        else : 
-                            retLiteralCmdList.append(v)
-                        retValue['__literal_cmd__'] = retLiteralCmdList
-                    self.copyAdditionalDict(cmdRoot[focus],retValue)
-                else :
-                    if len(matched) == 0:
-                        pass
-                    elif len(matched) == 1:
-                        focus = matched[0]
-                        newCmd += matched[0] + " "
-                        root = cmdRoot[matched[0]]
-                        if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
-                            retValue[focus] = v
-                            if 'chooseList' in cmdRoot[focus]:
-                                retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
-                            else : 
-                                retLiteralCmdList.append(v)
-                            retValue['__literal_cmd__'] = retLiteralCmdList
-                        else:
-                            retCmdList.append(v)  # command
-                            retValue['__cmd__'] = retCmdList
-                            if 'chooseList' in cmdRoot[focus]:
-                                retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
-                            else : 
-                                retLiteralCmdList.append(v)
-                            retValue['__literal_cmd__'] = retLiteralCmdList
+                        retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                        quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                         self.cmd = newCmd
-                        self.copyAdditionalDict(cmdRoot[matched[0]],retValue)
-                    else:
-                        newCmd += v
-                        print()
-                        print("recommend list: ",end="",flush=True)
-                        for s in matched:
-                            print(s," ",end="",flush=True)
-                        print()
-                        for s in matched:
-                            t = 'argument'
-                            if cmdRoot[s]['type'] != 'argument':
-                                t = 'command'
-                            returnable = ""
-                            if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
-                                returnable = '[returnable]'
-                            print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                        break
-
-        if self.debug :
-            print("newCmd:/",newCmd,"/ root: ",root,sep="")
-        self.cmd = newCmd
-        # check auto completion for following order
-        # while True:
-        #     if 'cmd' in root:
-        #         cmdRoot = root['cmd']
-        #         # print(cmdRoot)
-        #         # print(cmdRoot.keys())
-        #         # print(len(cmdRoot.keys()))   
-        #         t = list(cmdRoot.keys())
-        #         # print(t[0])
-        #         if len(t) == 1 and cmdRoot[t[0]]['type'] != 'argument' and cmdRoot[t[0]]['returnable'] != 'returnable' :
-        #             self.cmd += t[0] + ' '
-        #             retCmdList.append(t[0])
-        #             # lastWord = t[0]
-        #             root = cmdRoot[t[0]]
-        #         else :
-        #             break
-        #     else :
-        #         break
-        retValue['__literal_cmd__'] = retLiteralCmdList
-        retValue['__cmd__'] = retCmdList
-        if self.c == '\n':
-            if self.debug:
-                print("return root:",root)
-                print("lastWord:",lastWord)
-                print("retValue:",retValue)
-                print("cmd:/",self.cmd,"/",sep="")
-            if 'cmd' in root:
-                cmdRoot = root['cmd']
-                focus = ""
-                for crk, crv in cmdRoot.items():
-                    if lastWord == crk:
-                        if self.debug :
-                            print("exact matched cmd key:",crk)
-                        focus = crk
-                        if 'returnable' in cmdRoot[focus] and cmdRoot[focus]['returnable'] == 'returnable' :
-                            retCmdList.append(focus)
-                            retValue['__cmd__'] = retCmdList
-                            if 'chooseList' in cmdRoot[focus]:
-                                if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
-                                    retLiteralCmdList.append(focus)
-                                else:
-                                    retLiteralCmdList.append(v)
-                            retValue['__literal_cmd__'] = retLiteralCmdList
+                        # show recommendation
+                        self._showRecommendation(root,retValue)
+                        return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                        # if 'chooseList' in cmdRoot[focus]:
+                        #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                        # else : 
+                        #     retLiteralCmdList.append(v)
+                        # retValue['__literal_cmd__'] = retLiteralCmdList
+                        # self.copyAdditionalDict(cmdRoot[focus],retValue)
+                    else :  # 딱 맞는 것은 없다.
+                        if len(matched) == 0:
+                            retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                            quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                            self.cmd = newCmd
+                            print('ERROR: no matched == 0')
+                            return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                        elif len(matched) == 1:
+                            focus = matched[0]
+                            newCmd += matched[0] + " "
                             root = cmdRoot[focus]
-                        
-                        break
-        return (root,lastWord,retValue)
+                            if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
+                                print("ERROR: not reachable")
+                                # if 'chooseList' in cmdRoot[focus]:
+                                #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                                # else : 
+                                #     retLiteralCmdList.append(v)
+                                # retValue['__literal_cmd__'] = retLiteralCmdList
+                            else:
+                                retCmdList.append(v)  # command
+                                retValue['__cmd__'] = retCmdList
+                                # if 'chooseList' in cmdRoot[focus]:
+                                #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                                # else : 
+                                #     retLiteralCmdList.append(v)
+                                # retValue['__literal_cmd__'] = retLiteralCmdList
+                            retValue[focus] = v
+                            retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                            quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                            self.cmd = newCmd
+                            # show recommendation
+                            self._showRecommendation(root,retValue)
+                            return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                            # self.copyAdditionalDict(cmdRoot[matched[0]],retValue)
+                        else:
+                            print()
+                            print("recommend list: ",end="",flush=True)
+                            for s in matched:
+                                print(s," ",end="",flush=True)
+                            print()
+                            temp = v
+                            longestMatch = v
+                            matchFlag = True
+                            for c in matched[0][len(v):]:
+                                temp += c
+                                for m in matched:
+                                    if temp != m[:len(temp)] :
+                                        matchFlag = False
+                                        break
+                                if matchFlag == True:
+                                    longestMatch = temp
+                                else :
+                                    break
+                            newCmd += longestMatch
+                            retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                            quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                            self.cmd = newCmd
+                            for s in matched:
+                                t = 'argument'
+                                if cmdRoot[s]['type'] != 'argument':
+                                    t = 'command'
+                                returnable = ""
+                                if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
+                                    returnable = '[returnable]'
+                                print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                            return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+        else :  # cmd == "" 인 경우
+            print("ERROR:words length", len(words) , words)
+
+        return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+
+
+        #if self.cmd == "":
+        #    return (root,lastWord,retValue,quoteFlag)
+        #elif self.cmd[0] == ' ':        # self.cmd != ""
+        #    return (root,lastWord,retValue,quoteFlag)
+        # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
+        # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
+        # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
+
+
+    def checkReturnable(self,root):
+        if 'cmd' in root:
+            rootCmd = root['cmd']
+            for k,v in rootCmd.items():
+                if 'cmd' in rootCmd[k]:
+                    self.checkReturnable(rootCmd[k])
+                else:
+                    rootCmd[k]['returnable'] = 'returnable'
+                if 'returnable' in rootCmd[k] and rootCmd[k]['returnable'] == 'returnable':
+                    if 'returnfunc' not in rootCmd[k] or not rootCmd[k]['returnfunc']:
+                        rootCmd[k]['returnfunc'] = self.common
+        return
             
     def run(self):
         """ 
@@ -507,39 +806,24 @@ class CiscoStyleCli:
         """
         # print("the simple distributed compile environment remotely",flush=True)
 
+
         print('\n'*2)
-        print('input:',end='',flush=True)
         self.cmd = ""
-        quoteFlag = False
+        self.c = ''
         while True:
-            root , lastCmd , retValue = self.checkCmd(self.cmd)
+            root , lastCmd , retValue , quoteFlag , isFinishedFromReturn = self.checkCmd(self.cmd.strip())
             if self.debug:
-                print('lastCmd:', lastCmd , 'retValue:',retValue)
-            if self.c == '\n':
-                if self.debug:
-                    print('RETURN',flush=True)
-                    print("root:",root)
-                    print("cmd:",self.cmd.replace('\t',' '))
-                retValue['__return__'] = self.cmd.strip().replace('\t',' ')
-                if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
-                    if 'returnfunc' in root and root['returnfunc']:
-                        if self.debug:
-                            print('returnfunc')
-                            print("retValue:",retValue)
-                        root['returnfunc'](retValue)
-                    return retValue
-            # get a word
-            for i in range(len(lastCmd)):
-                if lastCmd[i] == '"' and i != 0 and lastCmd[i-1] != "\\":
-                    if quoteFlag == False:
-                        quoteFlag = True
-                    else :
-                        quoteFlag = False
-            print("\ninput:",self.cmd.replace("\t"," "),sep="",end="",flush=True)
+                # print("self.remoteCmd:",self.remoteCmd)
+                #print('root:', root)
+                print('quoteFlag:',quoteFlag, "isFinishedFromReturn:",isFinishedFromReturn)
+                print('lastCmd:', lastCmd , 'retValue:',retValue , 'self.infinite:',self.infinite)
+            if isFinishedFromReturn == True and self.infinite == False:
+                return retValue
+            print('input:', self.cmd.replace('\t',' '),end='',sep='',flush=True)
             while True:
                 if self.debug:
                     print(flush=True)
-                    print("input:/",self.cmd.replace("\t"," "),"/",self.cmd.replace("\t"," "),sep="",end="",flush=True)
+                    print("quoteFlag:",quoteFlag," input:/",self.cmd.replace("\t"," "),"/",self.cmd.replace("\t"," "),sep="",end="",flush=True)
                 c = self.getch()
                 self.c = c
                 
@@ -547,43 +831,48 @@ class CiscoStyleCli:
                 if ord(c) == 8 or ord(c) == 127 :  # backspace 8:linux terminal ,  127:vscode terminal
                     if len(self.cmd) > 0:
                         print('\b \b',end="",flush=True)
-                        if self.cmd[-1] == '"' and len(self.cmd) >= 2 and self.cmd[-2] != "\\":
-                            if quoteFlag == False:
-                                quoteFlag = True
-                            else :
-                                quoteFlag = False                            
+                        last = self.cmd[-1]
                         self.cmd = self.cmd[:-1]
+                        if last == '"' and len(self.cmd) >= 1 and self.cmd[-1] != "\\":
+                            quoteFlag = self._changeQuoteFlag(quoteFlag)
+                        continue
                     continue
-                if c == '"' and self.cmd and self.cmd[-1] != "\\":
+                if self.debug:
+                    print("cmd1:[",self.cmd,"] quoteFlag=",quoteFlag,sep="")
+                if self.cmd and c == '"' and self.cmd[-1] != "\\":
+                    quoteFlag = self._changeQuoteFlag(quoteFlag)
                     if quoteFlag == False:
-                        quoteFlag = True
-                    else :
-                        quoteFlag = False
+                        self.cmd += c + ' '
+                        self.c = ' '
+                        break
+                elif not self.cmd and c == '"':
+                    quoteFlag = self._changeQuoteFlag(quoteFlag)
+                    if quoteFlag == False:
+                        self.cmd += c + ' '
+                        self.c = ' '
+                        break
+                if self.debug:
+                    print("cmd2:[",self.cmd,"] quoteFlag=",quoteFlag,sep="")
                 if quoteFlag == True:
                     if c == '\n':
                         continue
                     if c == ' ':
                         c = '\t'
                     self.cmd += c
+                    if self.debug:
+                        print("in quote cmd:[",self.cmd,"] quoteFlag=",quoteFlag,sep="")
                     print(c.replace("\t",' '),end="",flush=True)
                 else : 
                     if c == '\t' or c == '\n':
                         c = ' '
-                    if c == ' ' and self.cmd and self.cmd[-1] != ' ':
-                        self.cmd += c
+                    if self.c == '\n':
+                        break
+                    if c == ' ' and self.cmd and self.cmd[-1] == ' ':
+                        break
+                    print(c,end="",flush=True)
+                    self.cmd += c
                     if c == ' ' :
                         break
-                    # if c == '\n':
-                    #     if self.debug:
-                    #         print(c, 'RETURN',flush=True)
-                    #         print("root:",root)
-                    #         print("cmd:",self.cmd.replace('\t',' '))
-                    #     retValue['__return__'] = self.cmd.strip().replace('\t',' ')
-                    #     if ('returnable' in root and root['returnable'] == 'returnable') or 'cmd' not in root:
-                    #         return retValue
-                    else :
-                        print(c,end="",flush=True)
-                        self.cmd += c
                         
         retValue['__return__'] = self.cmd.strip().replace('\t',' ')
         return retValue
@@ -593,7 +882,7 @@ class CiscoStyleCli:
         if isinstance(vv, dict):
             print(start ,  " = {}", sep="", file=f)
             for k, v in vv.items():
-                self.traverseFD(f,v,start + "['" + k  + "']")
+                self.traverseFD(f,v,start + "['" + str(k)  + "']")
         elif isinstance(vv, (list, tuple)):
             for i, x in enumerate(vv):
                 self.traverseFD(f,x,start + "[list:" + str(i) + "]" )
@@ -973,6 +1262,7 @@ if (__name__ == "__main__"):
 
     parser.add_argument("-t", "--test", action="store_true",default=False,help='show the command but not run it for test & debug')
     parser.add_argument("-d", "--debug", action="store_true",default=False,help='show the command but not run it for test & debug')
+    parser.add_argument("--infinite", action="store_true",default=False,help='show the command but not run it for test & debug')
     parser.add_argument(
         '--csvfile',
         metavar="<csvfile>",
@@ -988,7 +1278,9 @@ if (__name__ == "__main__"):
 
     args = parser.parse_args()
 
-    csc = CiscoStyleCli(rule = args.rulefile , debug = args.debug)
+    print("argv:",sys.argv)
+
+    csc = CiscoStyleCli(rule = args.rulefile , infinite = args.infinite , debug = args.debug)
     rc = RemoteCommand(csvfile=args.csvfile,debug = args.debug)
     
     remoteCmd = {}
@@ -1045,25 +1337,29 @@ if (__name__ == "__main__"):
     # run [return]  <- use it now to check server's status
     runCmd = csc.addCmd(remoteCmd,'run','command',"", "run download or compile")
     downloadCmd = csc.addCmd(runCmd,'download','command',"", "run download")
-    tigerDesktopCmd = csc.addCmd(downloadCmd ,'tiger-desktop','command',"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
+    tigerDesktopCmd = csc.addArgument(downloadCmd ,'model',['tiger-desktop'],"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
     compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
-    tigerDesktopCmd = csc.addCmd(compileCmd ,'tiger-desktop','command',"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
+    tigerDesktopCmd = csc.addArgument(compileCmd ,'model',['tiger-desktop','bmw'],"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
     
     gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
-    tmp = csc.addArgument(gethostCmd,'choose','int',"returnable", "choose number from the list",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'})
-    tmp = csc.addArgument(tmp,'number','chooseList',"returnable", "choose222 number from the list",chooseList=['bmw','tiger','desktop'])
+    tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+    tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+    tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+    tmp = csc.addArgument(tmp,'number',['cheetah','tiger','fish'],"returnable", "type from the list",returnfunc=csc.common)
+    tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
+    tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary",returnfunc=csc.common)
     
     
     
     csc.setCliRule(remoteCmd)
     # csc.setFunc("listTable",rc.listTable)
     # csc.setFunc("quit",quit)
-    # TODO : rule을 만들어서 set 해야 한다. csc.setRule(..)
     while True:
         retValue = csc.run()
         if "quit" == retValue['__return__'][:len('quit')]:
             quit()
         elif "register" == retValue['__return__'][:len('register')]:
+            print('register')
             rc.appendData(retValue)
             rc.dataWrite()
         elif "test" == retValue['__return__'].strip():
@@ -1086,4 +1382,11 @@ if (__name__ == "__main__"):
     # print(ruleData.remoteCmd)
     
 
+
+# TODO
+# argument list
+# process argument-type , we show the list and use these definition when argument-type is list
+# auto completion
+# show the list at "" when we press the spacebar
+# when we press ? , we show the following whole commands and show the mapping table for arguments until input now.
 
