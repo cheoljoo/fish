@@ -662,7 +662,7 @@ class CiscoStyleCli:
                                     self._showRecommendation(root,retValue)
                                     if self.debug:
                                         print("longest matched command:",retValue)
-                                    return (root,lastWord,retValue,quoteFlag)
+                                    return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                                 else : 
                                     newCmd = oldCmd
                                     retValue['__return__'] = newCmd.strip().replace('\t',' ')
@@ -1275,10 +1275,13 @@ if (__name__ == "__main__"):
         type=str,
         default="rule.py",
         help='python data file to make a command line rule')
+    
+    parser.add_argument('X', type=str, nargs='+')
 
     args = parser.parse_args()
 
-    print("argv:",sys.argv)
+    X_list = args.X
+    print("argv:",X_list)
 
     csc = CiscoStyleCli(rule = args.rulefile , infinite = args.infinite , debug = args.debug)
     rc = RemoteCommand(csvfile=args.csvfile,debug = args.debug)
@@ -1354,6 +1357,16 @@ if (__name__ == "__main__"):
     csc.setCliRule(remoteCmd)
     # csc.setFunc("listTable",rc.listTable)
     # csc.setFunc("quit",quit)
+
+    if args.X:
+        x = ' '.join(args.X)
+        print(x)
+        csc.c = '\n'
+        root , lastCmd , retValue , quoteFlag , isFinishedFromReturn = csc.checkCmd(x)
+        print('quoteFlag:',quoteFlag, "isFinishedFromReturn:",isFinishedFromReturn)
+        print('lastCmd:', lastCmd , 'retValue:',retValue)
+        quit()
+
     while True:
         retValue = csc.run()
         if "quit" == retValue['__return__'][:len('quit')]:

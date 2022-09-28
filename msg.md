@@ -35,3 +35,10 @@
       - 위에서 prefunc , returnfunc를 수행할때도 기본 argument로 retValue가 주어진다. 
 
 -----------------------
+2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-14194 :  not interactive (one line command)
+
+[VLM] TIGER-14194
+- checkCmd를 call해주면됨
+- parser.add_argument('X', type=str, nargs='+')
+
+
