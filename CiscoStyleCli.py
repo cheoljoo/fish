@@ -99,7 +99,7 @@ class CiscoStyleCli:
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         self.list()
         
-    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
+    def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None):
         """ 
         root['cmd'][command]['type'] = type
         root['cmd'][command]['cmd'] = {} # if you need more command
@@ -121,8 +121,8 @@ class CiscoStyleCli:
             root['cmd'][command]['prefunc'] = prefunc
         if returnfunc :
             root['cmd'][command]['returnfunc'] = returnfunc
-        if chooseList :
-            root['cmd'][command]['chooseList'] = chooseList
+        if additionalList :
+            root['cmd'][command]['additionalList'] = additionalList
         # check the rule : 1 arugment or all commands
         argumentTypeCount = 0
         commandTypeCount = 0
@@ -150,7 +150,7 @@ class CiscoStyleCli:
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         return root['cmd'][command]
-    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,chooseList=None):
+    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None):
         """ 
         root['cmd'][name]['type'] = 'argument'
         root['cmd'][name]['argument-type'] = type
@@ -181,8 +181,8 @@ class CiscoStyleCli:
             root['cmd'][name]['prefunc'] = prefunc
         if returnfunc:
             root['cmd'][name]['returnfunc'] = returnfunc
-        if chooseList:
-            root['cmd'][name]['chooseList'] = chooseList
+        if additionalList:
+            root['cmd'][name]['additionalList'] = additionalList
         # check the rule : 1 arugment or all commands
         argumentTypeCount = 0
         commandTypeCount = 0
@@ -368,12 +368,15 @@ class CiscoStyleCli:
         finally:
             termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
 
-    def copyAdditionalDict(self,_from,_to):
+    def copyAdditionalDictAndList(self,_from,_to):
         if 'additionalDict' in _from:
             for adk,adv in _from['additionalDict'].items():
                 if '__additionalDict__' not in _to:
                     _to['__additionalDict__'] = {}
                 _to['__additionalDict__'][adk] = adv
+        if 'additionalList' in _from:
+            for adk,adv in _from['additionalList']:
+                _to['__additionalList__'] = _from['additionalList']
     def _changeQuoteFlag(self,quoteFlag,s = None):
         if s == None:
             if quoteFlag == False:
@@ -574,12 +577,14 @@ class CiscoStyleCli:
                                         quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                                         self.cmd = newCmd.strip()
                                         retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                        self.copyAdditionalDictAndList(root,retValue)
                                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                                 elif 'argument-type' in cmdRoot[crk]:
                                     if self._checkArgumentType(v,cmdRoot[crk]['argument-type']) == False:
                                         quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                                         self.cmd = newCmd
                                         retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                        self.copyAdditionalDictAndList(root,retValue)
                                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                                 if data:
                                     retValue[crk] = { 'choice':v , 'data':data }
@@ -594,6 +599,7 @@ class CiscoStyleCli:
                     quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                     self.cmd = newCmd
                     retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                    self.copyAdditionalDictAndList(root,retValue)
                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
         # last word of command
         if words and len(words) == 1:
@@ -611,6 +617,7 @@ class CiscoStyleCli:
                     retCmdList.append(v)  # command
                     retValue['__cmd__'] = retCmdList
                     retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                    self.copyAdditionalDictAndList(root,retValue)
                     if 'returnable' in root and root['returnable'] == 'returnable':
                         if 'returnfunc' in root and root['returnfunc']:
                             if self.debug:
@@ -637,6 +644,7 @@ class CiscoStyleCli:
                                 quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                                 self.cmd = newCmd
                                 retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                self.copyAdditionalDictAndList(root,retValue)
                                 return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                             else:   # matched
                                 matchedFlag = True
@@ -648,6 +656,7 @@ class CiscoStyleCli:
                                 root = cmdRoot[crk]
                                 newCmd += v + ' '
                                 retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                                self.copyAdditionalDictAndList(root,retValue)
                                 if self.debug:
                                     print("matched argument or list/dict :",retValue)
                                 if 'returnable' in root and root['returnable'] == 'returnable':
@@ -740,6 +749,7 @@ class CiscoStyleCli:
                                     # self._showRecommendation(root,retValue)
                                     if self.debug:
                                         print("longest matched command:",retValue)
+                                    self.copyAdditionalDictAndList(root,retValue)
                                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                                 else : 
                                     newCmd = oldCmd
@@ -748,6 +758,7 @@ class CiscoStyleCli:
                                     self.cmd = newCmd
                                     if self.debug:
                                         print("not matched command:",retValue)
+                                    self.copyAdditionalDictAndList(root,retValue)
                                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                             else :
                                 data = cmdRoot[focus]['argument-type']
@@ -756,6 +767,7 @@ class CiscoStyleCli:
                                 quoteFlag = self._changeQuoteFlag(quoteFlag,oldCmd)
                                 self.cmd = oldCmd
                                 retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                self.copyAdditionalDictAndList(root,retValue)
                                 return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                         root = cmdRoot[focus]
                         if data:
@@ -769,13 +781,8 @@ class CiscoStyleCli:
                         self._showRecommendation(root,retValue)
                         if self.debug:
                             print("matched command:",retValue)
+                        self.copyAdditionalDictAndList(root,retValue)
                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
-                        # if 'chooseList' in cmdRoot[focus]:
-                        #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
-                        # else : 
-                        #     retLiteralCmdList.append(v)
-                        # retValue['__literal_cmd__'] = retLiteralCmdList
-                    # self.copyAdditionalDict(cmdRoot[focus],retValue)
                 else: # command
                     if focus and len(matched) <= 1:  # command중에 딱 맞는게 있다.
                         newCmd += v + " "
@@ -787,13 +794,8 @@ class CiscoStyleCli:
                         self.cmd = newCmd
                         # show recommendation
                         self._showRecommendation(root,retValue)
+                        self.copyAdditionalDictAndList(root,retValue)
                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
-                        # if 'chooseList' in cmdRoot[focus]:
-                        #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
-                        # else : 
-                        #     retLiteralCmdList.append(v)
-                        # retValue['__literal_cmd__'] = retLiteralCmdList
-                        # self.copyAdditionalDict(cmdRoot[focus],retValue)
                     else :  # 딱 맞는 것은 없다.
                         if len(matched) == 0:
                             retValue['__return__'] = newCmd.strip().replace('\t',' ')
@@ -807,16 +809,16 @@ class CiscoStyleCli:
                             root = cmdRoot[focus]
                             if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
                                 print("ERROR: not reachable")
-                                # if 'chooseList' in cmdRoot[focus]:
-                                #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                                # if 'additionalList' in cmdRoot[focus]:
+                                #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['additionalList'][int(v)])
                                 # else : 
                                 #     retLiteralCmdList.append(v)
                                 # retValue['__literal_cmd__'] = retLiteralCmdList
                             else:
                                 retCmdList.append(v)  # command
                                 retValue['__cmd__'] = retCmdList
-                                # if 'chooseList' in cmdRoot[focus]:
-                                #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['chooseList'][int(v)])
+                                # if 'additionalList' in cmdRoot[focus]:
+                                #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['additionalList'][int(v)])
                                 # else : 
                                 #     retLiteralCmdList.append(v)
                                 # retValue['__literal_cmd__'] = retLiteralCmdList
@@ -826,8 +828,8 @@ class CiscoStyleCli:
                             self.cmd = newCmd
                             # show recommendation
                             self._showRecommendation(root,retValue)
+                            self.copyAdditionalDictAndList(root,retValue)
                             return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
-                            # self.copyAdditionalDict(cmdRoot[matched[0]],retValue)
                         else:
                             print()
                             print("recommend list: ",end="",flush=True)
@@ -861,10 +863,12 @@ class CiscoStyleCli:
                                 if self.debug:
                                     print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
                                 print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                            self.copyAdditionalDictAndList(root,retValue)
                             return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
         else :  # cmd == "" 인 경우
             print("ERROR:words length", len(words) , words)
 
+        self.copyAdditionalDictAndList(root,retValue)
         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
 
 
