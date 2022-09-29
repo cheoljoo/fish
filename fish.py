@@ -519,7 +519,7 @@ if (__name__ == "__main__"):
         helpCmd = csc.addCmd(slddCmd ,'help','command',"returnable", "help follows sldd")
         hmiCmd = csc.addCmd(slddCmd ,'hmi','command',"", "hmi follows sldd")
         tmp = csc.addArgument(hmiCmd,'first','int',"", "need to input with first integer")
-        tmp = csc.addArgument(tmp,'second','int',"", "need to input with second integer",prefunc=lambda x: print("prefunc:",x))
+        tmp = csc.addArgument(tmp,'second','float',"", "need to input with second integer",prefunc=lambda x: print("prefunc:",x))
         # setup
         setupCmd = csc.addCmd(remoteCmd,'setup','command',"returnable", "setup clean or download in all enabled server",returnfunc=rc.test)
         cleanCmd = csc.addCmd(setupCmd ,'clean','command',"", "clean-up")

@@ -21,8 +21,8 @@ jsonHeaders = {'Content-Type': 'application/json'}
 #- status 상관없고, 
 
 dateRe = re.compile('^\s*(?P<date>(?P<year>20[0-9]+)-(?P<month>[0-9]+)-(?P<day>[0-9]+))')
-intRe = re.compile('^\s*(?P<ans>[0-9\-\+]+)')
-floatRe = re.compile('^\s*(?P<ans>[0-9\-\+\.]+)')
+intRe = re.compile('^\s*(?P<ans>[0-9\-\+]+)\s*$')
+floatRe = re.compile('^\s*(?P<ans>[0-9\-\+\.]+)\s*$')
 wordRe = re.compile('^\s*(?P<ans>[^ \n]+)')
 
 
@@ -255,8 +255,8 @@ class CiscoStyleCli:
         if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
             listCmd = self.addCmd(self.remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self.list)
             # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
-        if 'cmd' in self.remoteCmd and 'list-detailed' not in self.remoteCmd['cmd']:
-            listDetailedCmd = self.addCmd(self.remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+            tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+            tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self.listSimple)
         self.checkReturnable(self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         self.list()
@@ -270,9 +270,8 @@ class CiscoStyleCli:
             # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.quit)
         if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
             listCmd = self.addCmd(self.remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self.list)
-            # tmp = csc.addCmd(quitCmd ,'','command',"", "exit",prefunc=self.list)
-        if 'cmd' in self.remoteCmd and 'list-detailed' not in self.remoteCmd['cmd']:
-            listDetailedCmd = self.addCmd(self.remoteCmd ,'list-detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+            tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self.listDetailed)
+            tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self.listSimple)
         self.checkReturnable(self.remoteCmd)
         self.traverseFile("ruleData.py",self.remoteCmd,"remoteCmd","w")
         self.list()
@@ -301,18 +300,34 @@ class CiscoStyleCli:
         for s in self.tlist:
             print(s)
         print()
-    def traverseList(self,vv,start:str,detailed=False):
+    def listSimple(self,v=None):
+        self.tlist = []
+        functionNameAsString = sys._getframe().f_code.co_name
+        print("functionname:",functionNameAsString)
+        if self.debug:
+            print(self,v)
+        self.traverseList(self.remoteCmd,"",detailed=True,simple=True)
+        for s in self.tlist:
+            print(s)
+        print()
+    def traverseList(self,vv,start:str,detailed=False,simple=False):
         # print(start," ",file=f)
         if isinstance(vv, dict):
             if 'cmd' in vv:
                 v2 = vv['cmd']
                 for k, v in v2.items():
-                    rt = " "
+                    rt = ""
                     if 'returnable' in v and v['returnable'] == 'returnable':
                         rt = ' <CR>'
                     if self.debug:
                         print("show:",rt,k,v)
-                    if detailed:
+                    if simple:
+                        if 'type' in v and v['type'] != 'argument': 
+                            self.traverseList(v,start + " " + k + rt,detailed,simple)
+                        else:
+                            argtype = v['argument-type']
+                            self.traverseList(v,start + " " + k  + rt,detailed,simple)
+                    elif detailed:
                         prefunc = ""
                         if 'prefunc' in v:
                             prefunc = " pre-func" + str(v['prefunc'])
@@ -320,15 +335,16 @@ class CiscoStyleCli:
                         if 'returnfunc' in v:
                             returnfunc = " ret-func:" + str(v['returnfunc'])
                         if 'type' in v and v['type'] != 'argument': 
-                            self.traverseList(v,start + " (commands) " + prefunc + k  + returnfunc + rt,detailed=True)
+                            self.traverseList(v,start + " (commands) " + prefunc + k  + returnfunc + rt,detailed,simple)
                         else:
                             argtype = v['argument-type']
-                            self.traverseList(v,start + " (argument:" + str(argtype) +") " + prefunc + k + returnfunc + rt,detailed=True)
+                            self.traverseList(v,start + " (argument:" + str(argtype) +") " + prefunc + k + returnfunc + rt,detailed,simple)
                     else:
                         if 'type' in v and v['type'] != 'argument': 
-                            self.traverseList(v,start + " (commands) " + k  + rt)
+                            self.traverseList(v,start + " (commands) " + k  + rt,detailed,simple)
                         else:
-                            self.traverseList(v,start + " (argument) " + k  + rt)
+                            argtype = v['argument-type']
+                            self.traverseList(v,start + " (argument:" + str(argtype) + ") " + k  + rt,detailed,simple)
             else:
                 if self.debug:
                     print("start:",start)
@@ -449,6 +465,9 @@ class CiscoStyleCli:
                 t = 'argument'
                 if cmdRoot[s]['type'] != 'argument':
                     t = 'command'
+                else:
+                    if 'argument-type' in cmdRoot[s]:
+                        t += ":" + str(cmdRoot[s]['argument-type'])
                 returnable = ""
                 if 'returnable' in cmdRoot[s] and cmdRoot[s]['returnable'] == 'returnable':
                     returnable = '[returnable]'
@@ -469,11 +488,18 @@ class CiscoStyleCli:
                     elif isinstance(ld,dict):
                         for s in ld.keys():
                             print('    ->' + str(s) + ' : ' + ld[s])
-                        
-
         # else :
         #     print(" this is leaf node")
-
+    def _checkArgumentType(self,v,type):
+        if type == 'int':
+            grp = intRe.search(v)
+            if not grp:
+                return False
+        elif type == 'float':
+            grp = floatRe.search(v)
+            if not grp:
+                return False
+        return True
     def checkCmd(self,cmd):
         """ 
         check whether this cmd is right
@@ -539,7 +565,9 @@ class CiscoStyleCli:
                     else:
                         for crk, crv in cmdRoot.items():
                             if cmdRoot[crk]['type'] == 'argument':
+                                data = None
                                 if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
+                                    data = cmdRoot[crk]['argument-type']
                                     if v not in cmdRoot[crk]['argument-type']:
                                         # returnValue = -1
                                         # return (returnValue,prevRoot,root,lastWord,newCmd)  # returnValue == -1 : not matched
@@ -547,7 +575,16 @@ class CiscoStyleCli:
                                         self.cmd = newCmd.strip()
                                         retValue['__return__'] = self.cmd.strip().replace('\t',' ')
                                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
-                                retValue[crk] = { 'choice':v , 'data':mdRoot[crk]['argument-type'] }
+                                elif 'argument-type' in cmdRoot[crk]:
+                                    if self._checkArgumentType(v,cmdRoot[crk]['argument-type']) == False:
+                                        quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                                        self.cmd = newCmd
+                                        retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                        return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                                if data:
+                                    retValue[crk] = { 'choice':v , 'data':data }
+                                else : 
+                                    retValue[crk] = v
                                 root = cmdRoot[crk]
                                 newCmd += v + ' '
                                 continue
@@ -596,6 +633,11 @@ class CiscoStyleCli:
                                 if v in cmdRoot[crk]['argument-type']:   # matched
                                     matchedFlag = True
                                     data = cmdRoot[crk]['argument-type']
+                            elif 'argument-type' in cmdRoot[crk] and self._checkArgumentType(v,cmdRoot[crk]['argument-type']) == False:
+                                quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                                self.cmd = newCmd
+                                retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                             else:   # matched
                                 matchedFlag = True
                             if matchedFlag : # matched
@@ -709,9 +751,15 @@ class CiscoStyleCli:
                                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                             else :
                                 data = cmdRoot[focus]['argument-type']
+                        elif 'argument-type' in cmdRoot[focus]:
+                            if self._checkArgumentType(v,cmdRoot[focus]['argument-type']) == False:
+                                quoteFlag = self._changeQuoteFlag(quoteFlag,oldCmd)
+                                self.cmd = oldCmd
+                                retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                         root = cmdRoot[focus]
                         if data:
-                            retValue[crk] = { 'choice':v , 'data':data }
+                            retValue[focus] = { 'choice':v , 'data':data }
                         else:
                             retValue[focus] = v
                         retValue['__return__'] = newCmd.strip().replace('\t',' ')
