@@ -431,10 +431,10 @@ if (__name__ == "__main__"):
         default="fish.csv",
         help='csv file with field -  name,login_id,passwd,host,directory,email')
     parser.add_argument(
-        '--rulefile',
-        metavar="<rulefile>",
+        '--ruleprintfile',
+        metavar="<ruleprintfile>",
         type=str,
-        default="rule.py",
+        default="rulePrint.py",
         help='python data file to make a command line rule')
     
     parser.add_argument('X', type=str, nargs='*')
@@ -444,7 +444,7 @@ if (__name__ == "__main__"):
     X_list = args.X
     print("argv:",X_list)
 
-    csc = CiscoStyleCli.CiscoStyleCli(rule = args.rulefile , infinite = args.infinite , prompt = args.prompt, debug = args.debug)
+    csc = CiscoStyleCli.CiscoStyleCli(rulePrintFile = args.ruleprintfile , infinite = args.infinite , prompt = args.prompt, debug = args.debug)
     rc = RemoteCommand(csvfile=args.csvfile,debug = args.debug)
     
 
@@ -547,12 +547,12 @@ if (__name__ == "__main__"):
         tigerDesktopCmd = csc.addArgument(compileCmd ,'model',['tiger-desktop','bmw'],"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
         
         gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
-        tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-        tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-        tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-        tmp = csc.addArgument(tmp,'number',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list",returnfunc=csc.common)
-        tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'bmw'},returnfunc=csc.common)
-        tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary",returnfunc=csc.common)
+        tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'})
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'})
+        tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'bmw'})
+        tmp = csc.addArgument(tmp,'number',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list")
+        tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'bmw'})
+        tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary")
         
         
         
