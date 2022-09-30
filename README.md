@@ -30,6 +30,12 @@ FISH (Funny sImple distributed system with rSH through sSH)
     - use CiscoStyleCli Class to get input
     - set rules for Remotecommand
 
+```
+python3
+>> import CiscoStyleCli
+>> help(CiscoStyleCli)
+```
+
 # how to run
 - make
     - output

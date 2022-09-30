@@ -65,7 +65,7 @@ class RemoteCommand :
                     self.list.append(row)
                 if len(self.fieldnames) < len(list(row.keys())):
                     self.fieldnames = list(row.keys())
-        self.host = ['tiger','bmw','toyota']
+        self.host = ['tiger','animal','toyota']
         
     def appendData(self,rv):
         row = {}
@@ -544,14 +544,14 @@ if (__name__ == "__main__"):
         downloadCmd = csc.addCmd(runCmd,'download','command',"", "run download")
         tigerDesktopCmd = csc.addArgument(downloadCmd ,'model',['tiger-desktop'],"returnable", "download of tiger-desktop",returnfunc=rc.runDownloadTigerDesktop)
         compileCmd = csc.addCmd(runCmd,'compile','command',"", "run compile")
-        tigerDesktopCmd = csc.addArgument(compileCmd ,'model',['tiger-desktop','bmw'],"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
+        tigerDesktopCmd = csc.addArgument(compileCmd ,'model',['tiger-desktop','animal'],"returnable", "compile of tiger-desktop",additionalDict={'a':'b','c':'d'})
         
         gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
-        tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'})
-        tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'bmw'})
-        tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'bmw'})
-        tmp = csc.addArgument(tmp,'number',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list")
-        tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'bmw'})
+        tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
+        tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
+        tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'animal'})
+        tmp = csc.addArgument(tmp,'target',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list")
+        tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'animal'})
         tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary")
         
         
@@ -563,10 +563,7 @@ if (__name__ == "__main__"):
     if args.X:
         x = ' '.join(args.X)
         print(x)
-        csc.c = '\n'
-        root , lastCmd , retValue , quoteFlag , isFinishedFromReturn = csc.checkCmd(x)
-        print('quoteFlag:',quoteFlag, "isFinishedFromReturn:",isFinishedFromReturn)
-        print('lastCmd:', lastCmd , 'retValue:',retValue)
+        csc.runCommand(x)
         quit()
 
     while True:

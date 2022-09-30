@@ -16,10 +16,6 @@ tracker_url = jira_rest_url + "project/"
 fieldList_url = jira_rest_url + "field/"
 jsonHeaders = {'Content-Type': 'application/json'}
 
-# - 특정 조건 : 그 사람 (최근 일주일)
-#- 모든 ticket중에서 "그 사람"이 comments를 남긴 내용중에 tiger_weekly_report 이 comments의 첫줄에 적은 ticket들에 적은 comments를 출력한다.
-#- status 상관없고, 
-
 dateRe = re.compile('^\s*(?P<date>(?P<year>20[0-9]+)-(?P<month>[0-9]+)-(?P<day>[0-9]+))')
 intRe = re.compile('^\s*(?P<ans>[0-9\-\+]+)\s*$')
 floatRe = re.compile('^\s*(?P<ans>[0-9\-\+\.]+)\s*$')
@@ -28,16 +24,43 @@ wordRe = re.compile('^\s*(?P<ans>[^ \n]+)')
 
 class CiscoStyleCli:
     """ 
-    This Class get the string based on cisco style command line interface.
-    c = CiscoStyleCli(...)
-    lineStr = c.getStr()
-    wordStr = c.getWord()
-    ch = c.getCh()
-    bool = c.setCliRule()
+    This Class runs function from command string
+    Cisco Style give the recommandation when you can use easily.
+    if you do not know what you do , press space or tab.
+    then CiscoStyleCli shows the recommendation with help description.
+    
+    1. interactive cisco command line interface
+    csc = CiscoStyleCli()
+    csc.run()
+        - show the prompt to get your command (interactive mode)
+        - press enter key , this function will return
+    
+    2. endless interactive cisco command line interface
+    csc = CiscoStyleCli(infinite=True)
+    csc.run() 
+        - it has infinite loop
+        - show the prompt to get your command (interactive mode)
+        - you can quit when you meet quit command or quit()
+    
+    3. non-interactive run command
+    csc = CiscoStyleCli()
+    csc.runCommand(cmd)
+        - run your command (non-interactive mode)
     """
-    def __init__(self,rulePrintFile=None,infinite=False,prompt = "FISH~~:" , debug=False):
+    def __init__(self,rulePrintFile=None,infinite=False,prompt = "FISH~~:" , debug=False , isUseDefaultCommon = True):
         """ 
-        초기화 self.remoteCmd
+        initalize
+        it has only 2 commands : quit , list
+        
+        :param rulePrintFile: file name to print the tree
+        :param infinite: False (default) or True 
+                True if you want infinite loop. 
+                False if want to finish when you stroke 'return' key.
+        :param prompt: your prompt
+        :param debug: False (default) or True
+                True if you want to print more information
+        :param isUseDefaultCommon: True (default) or False
+                False if you want not to show message when self._common runs
         """
         self.infinite = infinite
         self.debug = debug
@@ -46,6 +69,7 @@ class CiscoStyleCli:
         self.remoteCmd = {}
         self.rulePrintFile = rulePrintFile
         self._setCliDefault()
+        self.isUseDefaultCommon = isUseDefaultCommon
         
         if self.debug :
             print("remoteCmd:",self.remoteCmd)
@@ -56,9 +80,43 @@ class CiscoStyleCli:
         
     def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None):
         """ 
-        root['cmd'][command]['type'] = type
-        root['cmd'][command]['cmd'] = {} # if you need more command
-        return root['cmd'][command]
+        add node (command type) in tree
+        it is fixed string.
+        
+        :command tree example:
+            gethost choose1 choose <CR>
+            gethost choose2 target <CR>
+            gethost choose3 shoot <CR>
+            quit <CR>
+            list <CR> detailed <CR>
+            list <CR> simple <CR>
+
+        :code example:
+            csc = CiscoStyleCli.CiscoStyleCli()
+            cmdTop = {}
+            gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
+            tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})        # level 2
+            tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})     # level 3
+            quitCmd = self.addCmd(cmdTop ,'quit','command',"returnable", "exit",returnfunc=self._quit)                                       # level 1
+            listCmd = self.addCmd(cmdTop ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)           # level 1
+            tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed) # level 2
+            tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)       # level 2
+            csc.setCliRule(cmdTop)
+        
+        :param root: parent node
+        :param command: command name - retValue will have dictionary {name:value}
+        :param type: command
+        :param returnable: 'returnable' when we run something after strike 'return' key.  
+        :param desc: description
+        :param prefunc: function pointer - it will be run if your command meets this function.  show the example to understand easily
+        :param returnfunc: function pointer - it will be run when returnable == 'returnable' and you strike 'return' key.  default returnfunc=self._common
+                v : {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 2'}
+                v : {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        :param additionalDict: give this information to argument of prefunc and returnfunc. 
+                'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
+        :param additionalList: give this information to argument of prefunc and returnfunc. 
+                'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
+        :return: current node of tree
         """
         functionNameAsString = sys._getframe().f_code.co_name
         if 'cmd' not in root:
@@ -107,9 +165,49 @@ class CiscoStyleCli:
         return root['cmd'][command]
     def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None):
         """ 
-        root['cmd'][name]['type'] = 'argument'
-        root['cmd'][name]['argument-type'] = type
-        root['cmd'][name]['cmd'] = {} # if you need more command
+        add node (argument type) in tree
+        argument type means variable type. it is not fixed string. user should put the variant value.
+            - argument type : int
+            - argument type : str
+            - argument type : float
+            - argument type : [strA,strB,strC,...]  - list type : user can use one string in this list  (all are string)
+            - argument type : { key1:value1 , key2:value2 , ...} - dictionary type : user can use one key in this dictionary (all key and value are string)
+        
+        :command tree example:
+            gethost choose1 choose <CR>
+            gethost choose2 target <CR>
+            gethost choose3 shoot <CR>
+            quit <CR>
+            list <CR> detailed <CR>
+            list <CR> simple <CR>
+
+        :code example:
+            csc = CiscoStyleCli.CiscoStyleCli()
+            cmdTop = {}
+            gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
+            tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})        # level 2
+            tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})     # level 3
+            quitCmd = self.addCmd(cmdTop ,'quit','command',"returnable", "exit",returnfunc=self._quit)                                       # level 1
+            listCmd = self.addCmd(cmdTop ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)           # level 1
+            tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed) # level 2
+            tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)       # level 2
+            csc.setCliRule(cmdTop)
+        
+        :param root: parent node
+        :param name: argument name - retValue will have dictionary {name:value}
+        :param type: argument type - int , float , str , list , dict
+                when you use list and dict , it will give the recommendation with these list and dictionary contents (keys).
+        :param returnable: 'returnable' when we run something after strike 'return' key.  
+        :param desc: description
+        :param prefunc: function pointer - it will be run if your command meets this function.  show the example to understand easily
+        :param returnfunc: function pointer - it will be run when returnable == 'returnable' and you strike 'return' key.  default returnfunc=self._common
+                v : {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 2'}
+                v : {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        :param additionalDict: give this information to argument of prefunc and returnfunc. 
+                'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
+        :param additionalList: give this information to argument of prefunc and returnfunc. 
+                'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
+        :return: current node of tree
         """
         functionNameAsString = sys._getframe().f_code.co_name
         if 'cmd' not in root:
@@ -166,10 +264,15 @@ class CiscoStyleCli:
             quit()
         return root['cmd'][name]
     
-    # def setFunc(self,funcname,funcptr):
-    #     self.funcTable[funcname] = funcptr
-    #     if self.debug and funcptr != quit:
-    #         funcptr()
+        
+    def _setCliDefault(self):
+        if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
+            quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self._quit)
+        if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
+            listCmd = self.addCmd(self.remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)
+            tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed)
+            tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)
+            
     def _setCliRuleTcmdRecursive(self,root,topNode):
         functionNameAsString = sys._getframe().f_code.co_name
         if self.debug:
@@ -198,16 +301,70 @@ class CiscoStyleCli:
                 tmpRoot = self.addCmd(root,k,'command',returnable,desc)
             if ('__attribute' in v and len(v) > 1) or ('__attribute' not in v and len(v) > 0):
                 self._setCliRuleTcmdRecursive(tmpRoot,v)
-    
-    def _setCliDefault(self):
-        if 'cmd' in self.remoteCmd and 'quit' not in self.remoteCmd['cmd']:
-            quitCmd = self.addCmd(self.remoteCmd ,'quit','command',"returnable", "exit",returnfunc=self._quit)
-        if 'cmd' in self.remoteCmd and 'list' not in self.remoteCmd['cmd']:
-            listCmd = self.addCmd(self.remoteCmd ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)
-            tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed)
-            tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)
             
     def setCliRuleTcmd(self,top):
+        """ 
+        set rule for our tiger project (Tcmd : Tiger Command)
+        it has different sequence of dictionary tree.
+        finally it set the self._comon(v) when returnable is on or this is last token (word).
+          and it will add 'list' and 'quit' command automatically if you do not set it.
+        
+        :code example:
+            TOP = {}
+            projectList = ['tiger','cheetah','fish']
+            TOP ['register'] = {
+                '__attribute' : {
+                    'type' : "command",
+                    'desc' : "registration~~",
+                    'returnable' : "returnable"
+                    },
+                'name' : {
+                    '__attribute' : {
+                        'type' : "command",
+                        'desc' : "name~~",
+                        'returnable' : "",
+                    }
+                },
+                'target' : {
+                    'next-target' : {}
+                },
+                'target2' : {
+                    'next2-target' : {
+                        '__attribute' : {
+                            'desc' : "next target",
+                            'returnable' : "",
+                        }
+                    }
+                },
+                'vbee' : {
+                    'project' : {
+                        '__attribute' : {
+                            'desc' : "choose from list",
+                            'type' : 'argument',
+                            'argument-type' : projectList
+                        }
+                    }
+                }
+            }
+            csc.setCliRuleTcmd(TOP)
+
+        if you do not '__attribute' , we will set as default
+            ['__attribute']['returnable'] = ""
+            ['__attribute']['type'] = 'command'
+            ['__attribute']['returnable'] = ""
+            ['__attribute']['desc'] = ""
+            ['__attribute']['argument-type'] = None
+            if you want to use dictionary or list , 
+                ['__attribute']['type'] = 'argument'
+                ['__attribute']['argument-type'] = one dimentional dictionary or list
+
+        verification method: you can show the tree with the following command
+            list<CR>
+            list simple<CR>
+            list detailed<CR>
+        
+        :param top: rule dictionary tree with different type
+        """
         functionNameAsString = sys._getframe().f_code.co_name
         print("functionname:",functionNameAsString)
         self.remoteCmd = {}
@@ -217,9 +374,34 @@ class CiscoStyleCli:
         self._checkReturnable(self.remoteCmd)
         if self.rulePrintFile:
             self._traverseFile(self.rulePrintFile,self.remoteCmd,"remoteCmd","w")
-        self._list()
+        self._listSimple()
 
     def setCliRule(self,rule):
+        """ 
+        set rule 
+        rule is generated from addCmd() and addArgument() functions.
+        finally it set the self._comon(v) when returnable is on or this is last token (word).
+          and it will add 'list' and 'quit' command automatically if you do not set it.
+        
+        :code example:
+            csc = CiscoStyleCli.CiscoStyleCli()
+            remoteCmd = {}
+            gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
+            tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
+            tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
+            tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'animal'})
+            tmp = csc.addArgument(tmp,'target',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list")
+            tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'animal'})
+            tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary")
+            csc.setCliRule(remoteCmd)
+        
+        verification method: you can show the tree with the following command
+            list<CR>
+            list simple<CR>
+            list detailed<CR>
+            
+        :param rule: rule dictionary tree made by addCmd() and addArgument()
+        """
         functionNameAsString = sys._getframe().f_code.co_name
         print("functionname:",functionNameAsString)
         self.remoteCmd = rule
@@ -227,7 +409,7 @@ class CiscoStyleCli:
         self._checkReturnable(self.remoteCmd)
         if self.rulePrintFile:
             self._traverseFile(self.rulePrintFile,self.remoteCmd,"remoteCmd","w")
-        self._list()
+        self._listSimple()
     
     def _quit(self,v=None):
         print("byebye!!   see you again~~   *^^*")
@@ -346,66 +528,69 @@ class CiscoStyleCli:
                     quoteFlag = self._changeQuoteFlag(quoteFlag)
                 i += 1
         return quoteFlag
-    def findRoot(self,cmd):
-        """ 
-        while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
-        'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
-        prevCmd = 'gethost'가 들어가면 안성맞춤이다.
-        """
-        functionNameAsString = sys._getframe().f_code.co_name
-        if self.debug : 
-            print("functionname:",functionNameAsString)
-        retValue = {}
-        retCmdList = []
-        retLiteralCmdList = []
-        words = cmd.strip().split(' ')
-        root = self.remoteCmd
-        lastWord = ""
-        newCmd = ""
-        #if self.cmd == "":
-        #    return (root,lastWord,retValue,quoteFlag)
-        #elif self.cmd[0] == ' ':        # self.cmd != ""
-        #    return (root,lastWord,retValue,quoteFlag)
-        # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
-        # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
-        # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
-        while len(words):
-            prevRoot = root
-            v = words.pop(0)
-            lastWord = v
-            if self.debug:
-                print("get word : v :",v)
-                print("root:",root)
-                print("words:",words)
-                print("retValue:",retValue)
-            if words :  # 마지막 word가 아니면 
-                if 'cmd' in root:
-                    cmdRoot = root['cmd']
-                    if self.debug:
-                        print("v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
-                    # matched command
-                    if v in cmdRoot and cmdRoot[v]['type'] == 'command':
-                        root = cmdRoot[v]
-                        newCmd += v + ' '
-                        continue
-                    # matched argument
-                    for crk, crv in cmdRoot.items():
-                        if cmdRoot[crk]['type'] == 'argument':
-                            if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
-                                if v not in cmdRoot[crk]['argument-type']:
-                                    returnValue = -1
-                                    return (returnValue,prevRoot,root,lastWord,newCmd)  # returnValue == -1 : not matched
-                            root = cmdRoot[crk]
-                            newCmd += v + ' '
-                            continue
-                returnValue = -1
-                return (returnValue,prevRoot,root,lastWord,newCmd) # returnValue == -1 : not matched
+    # def findRoot(self,cmd):
+    #     """ 
+    #     while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
+    #     'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
+    #     prevCmd = 'gethost'가 들어가면 안성맞춤이다.
+    #     """
+    #     functionNameAsString = sys._getframe().f_code.co_name
+    #     if self.debug : 
+    #         print("functionname:",functionNameAsString)
+    #     retValue = {}
+    #     retCmdList = []
+    #     retLiteralCmdList = []
+    #     words = cmd.strip().split(' ')
+    #     root = self.remoteCmd
+    #     lastWord = ""
+    #     newCmd = ""
+    #     #if self.cmd == "":
+    #     #    return (root,lastWord,retValue,quoteFlag)
+    #     #elif self.cmd[0] == ' ':        # self.cmd != ""
+    #     #    return (root,lastWord,retValue,quoteFlag)
+    #     # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
+    #     # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
+    #     # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
+    #     while len(words):
+    #         prevRoot = root
+    #         v = words.pop(0)
+    #         lastWord = v
+    #         if self.debug:
+    #             print("get word : v :",v)
+    #             print("root:",root)
+    #             print("words:",words)
+    #             print("retValue:",retValue)
+    #         if words :  # 마지막 word가 아니면 
+    #             if 'cmd' in root:
+    #                 cmdRoot = root['cmd']
+    #                 if self.debug:
+    #                     print("v:",v,"checkCmd:cmd:keys",cmdRoot.keys())
+    #                 # matched command
+    #                 if v in cmdRoot and cmdRoot[v]['type'] == 'command':
+    #                     root = cmdRoot[v]
+    #                     newCmd += v + ' '
+    #                     continue
+    #                 # matched argument
+    #                 for crk, crv in cmdRoot.items():
+    #                     if cmdRoot[crk]['type'] == 'argument':
+    #                         if 'argument-type' in cmdRoot[crk] and isinstance(cmdRoot[crk]['argument-type'],(list,dict)) :
+    #                             if v not in cmdRoot[crk]['argument-type']:
+    #                                 returnValue = -1
+    #                                 return (returnValue,prevRoot,root,lastWord,newCmd)  # returnValue == -1 : not matched
+    #                         root = cmdRoot[crk]
+    #                         newCmd += v + ' '
+    #                         continue
+    #             returnValue = -1
+    #             return (returnValue,prevRoot,root,lastWord,newCmd) # returnValue == -1 : not matched
     def _common(self,v=None):
+        if not self.isUseDefaultCommon:
+            return
         functionNameAsString = sys._getframe().f_code.co_name
+        print("This is common type of prefunc and returnfunc function argument.")
         print("functionname:",functionNameAsString)
         if v:
-            print("v",v)
-        print("ERROR: need your definiation for return function")
+            print("function argument: v :",v)
+        print("Warning : set your returnfunc. this is templae function of prefunc and returnfunc argument.")
         
     def _showRecommendation(self,r,retValue):
         root = r
@@ -458,10 +643,30 @@ class CiscoStyleCli:
         return True
     def checkCmd(self,cmd):
         """ 
-        check whether this cmd is right
+        check whether this cmd is right and run registered function in prefunc and returnfunc arguments of addArgument() or addCmd()
         return the location from rootCmd following cmd  for guiding current and next arguments
-
         self.c : current input character
+        
+        flows
+            - while process each token (word) before last token (word)
+                move the next tree node each token
+                return current node if token has wrong input against tree
+            - process last token (word)
+                if input is return character,
+                    if returnable , run returnfunc
+                if input is space or tab character,
+                    find longestmatch
+            - return retValue
+        call function of prefunc and returnfunc
+            - prefunc and returnfunc has only one dictionary argument including all information
+        
+        :param cmd: input command line
+        :return root: node of tree for next argument.
+        :return lastWord: last stroke word
+        :return retValue: all your input information
+                example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        :return quoteflag: False or True according to the quotation counts
+        :return isFinishedFromReturn: False or True.   if it returns from input "return" , it is True.
         """
         print()
         functionNameAsString = sys._getframe().f_code.co_name
@@ -477,25 +682,13 @@ class CiscoStyleCli:
         if self.debug:
             print("cmd:[",self.cmd,"]",sep="")
             print("checkCmd:words:",words)
-        # for w in words:
-        #     i = 0
-        #     for s in w:
-        #         if i == 0 and s == '"':
-        #             quoteFlag = self._changeQuoteFlag(quoteFlag)
-        #         elif i > 0 and s == '"' and w[i-1] != "\\":
-        #             quoteFlag = self._changeQuoteFlag(quoteFlag)
-        #         i += 1
 
         root = self.remoteCmd
         lastWord = ""
         newCmd = ""
-        #if self.cmd == "":
-        #    return (root,lastWord,retValue,quoteFlag)
-        #elif self.cmd[0] == ' ':        # self.cmd != ""
-        #    return (root,lastWord,retValue,quoteFlag)
-        # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
-        # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
-        # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
+        # while process before last word
+        # when we exist while loop , we should process the last word.
+        # we will process last word in sentence with [LAST_WORD]
         while len(words) > 1:
             prevRoot = root
             v = words.pop(0)
@@ -505,7 +698,7 @@ class CiscoStyleCli:
                 print("root:",root)
                 print("words:",words)
                 print("retValue:",retValue)
-            if words :  # 마지막 word가 아니면 
+            if words :  # not last word  (exit the loop if it is last word)
                 if 'cmd' in root:
                     cmdRoot = root['cmd']
                     if self.debug:
@@ -555,6 +748,7 @@ class CiscoStyleCli:
                     self._copyAdditionalDictAndList(root,retValue)
                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
         # last word of command
+        # [LAST_WORD]
         if words and len(words) == 1:
             v = words.pop(0)
             lastWord = v
@@ -655,8 +849,9 @@ class CiscoStyleCli:
                             if self.debug :
                                 print("matched cmd key:",crk)
                             matched.append(crk)
-                # 우리는 focusType (즉, argument , command)로 나누어 처리한다. 
+                # 우리는 focusType (즉, argument , command)로 나누어 처리한다.   we have only two type (argument or command)
                 # argument일때는 딱 1개만 존재하게 되고, argument와 command가 같이 있다면 무조건 argument가 우선순위가 높다.
+                #    it can have only zero or one argument. but it can have many commands if it does not have argument.
                 if focusType == 'argument':
                     oldCmd = newCmd
                     newCmd += v + " "
@@ -737,7 +932,7 @@ class CiscoStyleCli:
                         self._copyAdditionalDictAndList(root,retValue)
                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                 else: # command
-                    if focus and len(matched) <= 1:  # command중에 딱 맞는게 있다.
+                    if focus and len(matched) <= 1:  # matched only 1 command
                         newCmd += v + " "
                         root = cmdRoot[focus]
                         retCmdList.append(v)  # command
@@ -749,7 +944,7 @@ class CiscoStyleCli:
                         self._showRecommendation(root,retValue)
                         self._copyAdditionalDictAndList(root,retValue)
                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
-                    else :  # 딱 맞는 것은 없다.
+                    else :  # not matched
                         if len(matched) == 0:
                             retValue['__return__'] = newCmd.strip().replace('\t',' ')
                             quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
@@ -825,15 +1020,6 @@ class CiscoStyleCli:
         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
 
 
-        #if self.cmd == "":
-        #    return (root,lastWord,retValue,quoteFlag)
-        #elif self.cmd[0] == ' ':        # self.cmd != ""
-        #    return (root,lastWord,retValue,quoteFlag)
-        # while에서는 root를 tree에 따라 변경시켜주는 일을 한다.
-        # 'gethost' 라고 하면 root = root['cmd']['gethost'] 으로 변경되어 , root['type'] 부터 볼수 있는 것을 의미한다. 
-        # prevCmd = 'gethost'가 들어가면 안성맞춤이다.
-
-
     def _checkReturnable(self,root):
         if 'cmd' in root:
             rootCmd = root['cmd']
@@ -850,10 +1036,12 @@ class CiscoStyleCli:
     def run(self):
         """ 
         main part of cisco command line interface
-        get string as input
+        meet the prompt for your input
+        get string from your input
+        run() will have infinite loop before meeting quit() if you set infinite argument in __init__() as True.
+        :return: retValue with all your input information
+                example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
         """
-        # print("the simple distributed compile environment remotely",flush=True)
-
 
         print('\n'*2)
         self.cmd = ""
@@ -940,4 +1128,20 @@ class CiscoStyleCli:
     def _traverseFile(self,filename:str,v,start:str,att):
         with open(filename, att, encoding='utf-8', errors='ignore') as f:
             self._traverseFD(f,v,start)
+    
+    def runCommand(self,cmd):
+        """ 
+        non-interactive run command
+        
+        :param cmd: retValue with all your input information
+                example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        """
+        functionNameAsString = sys._getframe().f_code.co_name
+        if self.debug : 
+            print("functionname:",functionNameAsString)
+        self.c = '\n'
+        root , lastCmd , retValue , quoteFlag , isFinishedFromReturn = self.checkCmd(cmd)
+        if self.debug:
+            print('quoteFlag:',quoteFlag, "isFinishedFromReturn:",isFinishedFromReturn)
+            print('lastCmd:', lastCmd , 'retValue:',retValue)
 
