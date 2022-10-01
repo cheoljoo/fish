@@ -544,13 +544,13 @@ FISH (Funny sImple distributed system with rSH through sSH)
 - [fish.asciicast](https://github.com/cheoljoo/fish/blob/main/img/fish.asciicast)
     - ![](https://github.com/cheoljoo/fish/blob/main/img/fish.gif)
 - cisco style cli interactive [normal.asciicast](https://github.com/cheoljoo/normal/blob/main/img/normal.asciicast)
-    - ![](https://github.com/cheoljoo/normal/blob/main/img/normal.gif)
+    - ![](https://github.com/cheoljoo/fish/blob/main/img/normal.gif)
 - cisco style cli interactive infinite loop [infinite.asciicast](https://github.com/cheoljoo/infinite/blob/main/img/infinite.asciicast)
-    - ![](https://github.com/cheoljoo/infinite/blob/main/img/infinite.gif)
+    - ![](https://github.com/cheoljoo/fish/blob/main/img/infinite.gif)
 - cisco style cli interactive mode for tiger project [tcmd.asciicast](https://github.com/cheoljoo/tcmd/blob/main/img/tcmd.asciicast)
-    - ![](https://github.com/cheoljoo/tcmd/blob/main/img/tcmd.gif)
+    - ![](https://github.com/cheoljoo/fish/blob/main/img/tcmd.gif)
 - cisco style cli run command once [runcommand.asciicast](https://github.com/cheoljoo/runcommand/blob/main/img/runcommand.asciicast)
-    - ![](https://github.com/cheoljoo/runcommand/blob/main/img/runcommand.gif)
+    - ![](https://github.com/cheoljoo/fish/blob/main/img/runcommand.gif)
 ## 4.4. reference links
 - https://github.com/asciinema/asciinema-player
 - https://github.com/asciinema/asciicast2gif
