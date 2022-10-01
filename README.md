@@ -15,7 +15,12 @@
   - [3.3. run (tiger command style)](#33-run-tiger-command-style)
   - [3.4. run (infinite mode)](#34-run-infinite-mode)
   - [3.5. others](#35-others)
-- [4. DESIGN](#4-design)
+- [4. asciicast2gif : convert asciinema record to gif](#4-asciicast2gif--convert-asciinema-record-to-gif)
+  - [4.1. working process](#41-working-process)
+  - [4.2. how to run asciicast2gif](#42-how-to-run-asciicast2gif)
+  - [4.3. samples for FISH and Cisco Style Cli](#43-samples-for-fish-and-cisco-style-cli)
+  - [4.4. reference links](#44-reference-links)
+- [5. DESIGN](#5-design)
 
 --------
 
@@ -519,8 +524,39 @@ FISH (Funny sImple distributed system with rSH through sSH)
 - make test-runCommand
     - non-interactive mode (run once with your input command with return key)
 
+# 4. asciicast2gif : convert asciinema record to gif
+## 4.1. working process
+1. asciinema record : ```asciinema rec```
+	- upload it into asciinea.org  and download from their link (enter)
+        - just asciinema.org supports for 7 days.
+	- save it locally
+    - asciinema: press <enter> to upload to asciinema.org, <ctrl-c> to save locally
+1. asciinema play : ```asciinema play <asciicast file>```
+    - you can play it.  but we need to different methods to show theis result
+1. convert asciinema to gif : ```asciicast2gif <asciicast file> <target.gif>```
+    - you can upload this gif without specific server to play it.
+## 4.2. how to run asciicast2gif
+- set alias in .bashrc
+    - ```alias asciicast2gif='docker run --rm -v $PWD:/data asciinema/asciicast2gif' ```
+- run
+    - ```asciicast2gif <asciicast file> <target.gif>```
+## 4.3. samples for FISH and Cisco Style Cli
+- [fish.asciicast](https://github.com/cheoljoo/fish/blob/main/img/fish.asciicast)
+    - ![](https://github.com/cheoljoo/fish/blob/main/img/fish.gif)
+- cisco style cli interactive [normal.asciicast](https://github.com/cheoljoo/normal/blob/main/img/normal.asciicast)
+    - ![](https://github.com/cheoljoo/normal/blob/main/img/normal.gif)
+- cisco style cli interactive infinite loop [infinite.asciicast](https://github.com/cheoljoo/infinite/blob/main/img/infinite.asciicast)
+    - ![](https://github.com/cheoljoo/infinite/blob/main/img/infinite.gif)
+- cisco style cli interactive mode for tiger project [tcmd.asciicast](https://github.com/cheoljoo/tcmd/blob/main/img/tcmd.asciicast)
+    - ![](https://github.com/cheoljoo/tcmd/blob/main/img/tcmd.gif)
+- cisco style cli run command once [runcommand.asciicast](https://github.com/cheoljoo/runcommand/blob/main/img/runcommand.asciicast)
+    - ![](https://github.com/cheoljoo/runcommand/blob/main/img/runcommand.gif)
+## 4.4. reference links
+- https://github.com/asciinema/asciinema-player
+- https://github.com/asciinema/asciicast2gif
+- docker : https://hub.docker.com/r/asciinema/asciicast2gif
 
-# 4. DESIGN
+# 5. DESIGN
 - ssh
     - If a command is specified, it is executed on the remote host instead of a login shell.
 - rsh 
