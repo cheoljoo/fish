@@ -14,7 +14,7 @@
       - [2.3.1.5. CiscoStyleCli.py](#2315-ciscostyleclipy)
       - [2.3.1.6. __init__.py](#2316-initpy)
     - [2.3.2. make package](#232-make-package)
-    - [2.3.3. test](#233-test)
+    - [2.3.2. upload package (distribution)](#232-upload-package-distribution)
     - [2.3.4. reference links](#234-reference-links)
 - [3. how to run](#3-how-to-run)
   - [3.1. run (normal mode)](#31-run-normal-mode)
@@ -397,13 +397,13 @@ FISH (Funny sImple distributed system with rSH through sSH)
     python3 -m pip install --upgrade setuptools wheel
     python3 setup.py sdist bdist_wheel
     ```
-    - verify the result
-    ```txt
-    package/dist  $  ls -l
-    total 40
-    -rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
-    -rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
-  ```
+- verify the result
+    - ```txt
+        package/dist  $  ls -l
+        total 40
+        -rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
+        -rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
+    ```
 ### 2.3.2. upload package (distribution)
 - ```
     cd package
