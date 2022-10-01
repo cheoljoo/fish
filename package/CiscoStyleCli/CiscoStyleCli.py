@@ -30,22 +30,35 @@ class CiscoStyleCli:
     then CiscoStyleCli shows the recommendation with help description.
     
     1. interactive cisco command line interface
-    csc = CiscoStyleCli()
+    from CiscoStyleCli import CiscoStyleCli
+    csc = CiscoStyleCli.CiscoStyleCli()
     csc.run()
         - show the prompt to get your command (interactive mode)
         - press enter key , this function will return
     
     2. endless interactive cisco command line interface
-    csc = CiscoStyleCli(infinite=True)
+    from CiscoStyleCli import CiscoStyleCli
+    csc = CiscoStyleCli.CiscoStyleCli(infinite=True)
     csc.run() 
         - it has infinite loop
         - show the prompt to get your command (interactive mode)
         - you can quit when you meet quit command or quit()
     
     3. non-interactive run command
-    csc = CiscoStyleCli()
+    from CiscoStyleCli import CiscoStyleCli
+    csc = CiscoStyleCli.CiscoStyleCli()
     csc.runCommand(cmd)
         - run your command (non-interactive mode)
+    
+    :param rulePrintFile: file name to print the tree
+    :param infinite: False (default) or True 
+            True if you want infinite loop. 
+            False if want to finish when you stroke 'return' key.
+    :param prompt: your prompt
+    :param debug: False (default) or True
+            True if you want to print more information
+    :param isUseDefaultCommon: True (default) or False
+            False if you want not to show message when self._common runs
     """
     def __init__(self,rulePrintFile=None,infinite=False,prompt = "FISH~~:" , debug=False , isUseDefaultCommon = True):
         """ 
@@ -67,6 +80,7 @@ class CiscoStyleCli:
         self.c = ''
         self.prompt = prompt
         self.remoteCmd = {}
+        self.remoteCmd['cmd'] = {}
         self.rulePrintFile = rulePrintFile
         self._setCliDefault()
         self.isUseDefaultCommon = isUseDefaultCommon
@@ -92,6 +106,7 @@ class CiscoStyleCli:
             list <CR> simple <CR>
 
         :code example:
+            from CiscoStyleCli import CiscoStyleCli
             csc = CiscoStyleCli.CiscoStyleCli()
             cmdTop = {}
             gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
@@ -182,6 +197,7 @@ class CiscoStyleCli:
             list <CR> simple <CR>
 
         :code example:
+            from CiscoStyleCli import CiscoStyleCli
             csc = CiscoStyleCli.CiscoStyleCli()
             cmdTop = {}
             gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
@@ -363,7 +379,8 @@ class CiscoStyleCli:
             list simple<CR>
             list detailed<CR>
         
-        :param top: rule dictionary tree with different type
+        Args:
+            top(dict) : rule dictionary tree with different type
         """
         functionNameAsString = sys._getframe().f_code.co_name
         print("functionname:",functionNameAsString)
@@ -384,6 +401,7 @@ class CiscoStyleCli:
           and it will add 'list' and 'quit' command automatically if you do not set it.
         
         :code example:
+            from CiscoStyleCli import CiscoStyleCli
             csc = CiscoStyleCli.CiscoStyleCli()
             remoteCmd = {}
             gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
@@ -400,7 +418,8 @@ class CiscoStyleCli:
             list simple<CR>
             list detailed<CR>
             
-        :param rule: rule dictionary tree made by addCmd() and addArgument()
+        Args:
+            rule (dict): rule dictionary tree made by addCmd() and addArgument()
         """
         functionNameAsString = sys._getframe().f_code.co_name
         print("functionname:",functionNameAsString)
@@ -510,8 +529,7 @@ class CiscoStyleCli:
                     _to['__additionalDict__'] = {}
                 _to['__additionalDict__'][adk] = adv
         if 'additionalList' in _from:
-            for adk,adv in _from['additionalList']:
-                _to['__additionalList__'] = _from['additionalList']
+            _to['__additionalList__'] = _from['additionalList']
     def _changeQuoteFlag(self,quoteFlag,s = None):
         if s == None:
             if quoteFlag == False:
@@ -680,7 +698,7 @@ class CiscoStyleCli:
         quoteFlag = False
         isFinishedFromReturn = False
         if self.debug:
-            print("cmd:[",self.cmd,"]",sep="")
+            print("cmd:[",cmd,"]",sep="")
             print("checkCmd:words:",words)
 
         root = self.remoteCmd
@@ -765,12 +783,13 @@ class CiscoStyleCli:
                     retValue['__cmd__'] = retCmdList
                     retValue['__return__'] = newCmd.strip().replace('\t',' ')
                     self._copyAdditionalDictAndList(root,retValue)
+                    if self.debug:
+                        print('matched command : check returnable : root:',root)
                     if 'returnable' in root and root['returnable'] == 'returnable':
                         if 'returnfunc' in root and root['returnfunc']:
                             if self.debug:
-                                print('returnfunc:',root['returnfunc'])
-                                print("retValue:",retValue)
-                            print('returnfunc',root['returnfunc'])
+                                print('matched command returnfunc:',root['returnfunc'])
+                                print("matched command retValue:",retValue)
                             root['returnfunc'](retValue)
                         self.cmd = ""
                         if self.debug:

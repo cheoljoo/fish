@@ -562,7 +562,7 @@ if (__name__ == "__main__"):
 
     if args.X:
         x = ' '.join(args.X)
-        print(x)
+        print('runCommand:',x)
         csc.runCommand(x)
         quit()
 
