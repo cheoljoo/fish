@@ -8,6 +8,7 @@
   - [2.3. make package and distribute python module](#23-make-package-and-distribute-python-module)
     - [2.3.1. make package](#231-make-package)
     - [2.3.2. test](#232-test)
+    - [2.3.3. reference links](#233-reference-links)
 - [3. how to run](#3-how-to-run)
   - [3.1. run (normal mode)](#31-run-normal-mode)
   - [3.2. run (debug mode)](#32-run-debug-mode)
@@ -347,11 +348,8 @@ FISH (Funny sImple distributed system with rSH through sSH)
   ```
 
 ## 2.3. make package and distribute python module
-- https://valuefactory.tistory.com/565
-- https://stackoverflow.com/questions/52016336/how-to-upload-new-versions-of-project-to-pypi-with-twine
-- https://rampart81.github.io/post/python_package_publish/
-- https://jammdev.tistory.com/34
-- https://www.holaxprogramming.com/2017/06/28/python-project-structures/
+- FISH project includes CiscoStyleCli python module
+  - refer to https://github.com/cheoljoo/fish/tree/main/package
 
 ### 2.3.1. make package
 - ```
@@ -429,6 +427,14 @@ FISH (Funny sImple distributed system with rSH through sSH)
     (commands) list <CR> (commands) detailed <CR>
     (commands) list <CR> (commands) simple <CR>
   ```
+
+### 2.3.3. reference links
+- https://valuefactory.tistory.com/565
+- https://stackoverflow.com/questions/52016336/how-to-upload-new-versions-of-project-to-pypi-with-twine
+- https://rampart81.github.io/post/python_package_publish/
+- https://jammdev.tistory.com/34
+- https://www.holaxprogramming.com/2017/06/28/python-project-structures/
+
 
 
 # 3. how to run
