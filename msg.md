@@ -1,4 +1,4 @@
-2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-13896 TIGER-13897 :  refactoring
+# 2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-13896 TIGER-13897 :  refactoring
 
 [VLM] TIGER-13896 , TIGER-13897
 - CiscoStyleCLI class
@@ -35,14 +35,14 @@
       - 위에서 prefunc , returnfunc를 수행할때도 기본 argument로 retValue가 주어진다. 
 
 -----------------------
-2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-14194 :  not interactive (one line command)
+# 2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-14194 :  not interactive (one line command)
 
 [VLM] TIGER-14194
 - checkCmd를 call해주면됨
 - parser.add_argument('X', type=str, nargs='+')
 
 -----------------------
-2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-14192 : (tcmd type command) seungdae.goh's command architecture   
+# 2022.09.28 [220923/refactoring_CiscoStyleCommandLineInterface] TIGER-14192 : (tcmd type command) seungdae.goh's command architecture   
 
 [VLM] TIGER-14192
 ```
@@ -84,3 +84,29 @@ TOP['build'] = {
   - ```v {'__cmd__': ['gethost', 'choose2'], 'number': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}```
   - ```v {'__cmd__': ['gethost', 'choose1'], 'choose': '0', '__return__': 'gethost choose1 0'}```
   - ```v {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '1', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 1'}```
+
+-----------------------
+# 2022.10.01 [220930/pypi] TIGER-14204 : pypi - upload python module on pypi
+
+[VLM] TIGER-14204
+- TIGER-14204 : python으로 cisco style command line 만들기 - CiscoStyleCLI 의 python module package 수행 (설명서와 help / guide)도 만들어야 할 듯.. 배포 할 것
+## make package
+```
+cd package
+python3 -m pip install --upgrade setuptools wheel
+python3 setup.py sdist bdist_wheel
+```
+- verify the result
+```txt
+package/dist  $  ls -l
+total 40
+-rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
+-rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
+```
+## upload package (distribution)
+```
+cd package
+python3 -m pip install --upgrade twine
+python3 -m twine upload --skip-existing dist/*
+pypi's id and passwd
+```

@@ -50,5 +50,5 @@ for l in lines:
         currentPath = currentPath.replace(rootPath,"")
         currentPathFlag = False
     
-print("filelist:",filelist)
+print("modified filelist:",filelist)
 
