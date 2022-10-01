@@ -6,9 +6,16 @@
   - [2.2. CiscoStyleCli Class](#22-ciscostylecli-class)
     - [2.2.1. document](#221-document)
   - [2.3. make package and distribute python module](#23-make-package-and-distribute-python-module)
-    - [2.3.1. make package](#231-make-package)
-    - [2.3.2. test](#232-test)
-    - [2.3.3. reference links](#233-reference-links)
+    - [2.3.1. file tree to make a python module](#231-file-tree-to-make-a-python-module)
+      - [2.3.1.1. LICENSE](#2311-license)
+      - [2.3.1.2. pyproject.toml](#2312-pyprojecttoml)
+      - [2.3.1.3. README.md](#2313-readmemd)
+      - [2.3.1.4. setup.py](#2314-setuppy)
+      - [2.3.1.5. CiscoStyleCli.py](#2315-ciscostyleclipy)
+      - [2.3.1.6. __init__.py](#2316-initpy)
+    - [2.3.2. make package](#232-make-package)
+    - [2.3.3. test](#233-test)
+    - [2.3.4. reference links](#234-reference-links)
 - [3. how to run](#3-how-to-run)
   - [3.1. run (normal mode)](#31-run-normal-mode)
   - [3.2. run (debug mode)](#32-run-debug-mode)
@@ -356,7 +363,35 @@ FISH (Funny sImple distributed system with rSH through sSH)
 - FISH project includes CiscoStyleCli python module
   - refer to https://github.com/cheoljoo/fish/tree/main/package
 
-### 2.3.1. make package
+### 2.3.1. file tree to make a python module
+- need the following file to make a python module
+- ```txt
+    .
+    ├── CiscoStyleCli
+    │   ├── CiscoStyleCli.py
+    │   └── __init__.py
+    ├── LICENSE
+    ├── pyproject.toml
+    ├── README.md
+    └── setup.py
+    ```
+#### 2.3.1.1. LICENSE
+- it is [MIT LICENSE](https://github.com/cheoljoo/fish/blob/main/package/LICENSE)
+#### 2.3.1.2. pyproject.toml
+- toml file : i do not know well. just copy it to use.
+#### 2.3.1.3. README.md 
+- this information will be used in pypi pages.
+#### 2.3.1.4. [setup.py](https://github.com/cheoljoo/fish/blob/main/package/setup.py)
+- name : lower characters
+- version : increase version when you update
+- py_modules , packages : use your class name (CiscoStyleCli)
+#### 2.3.1.5. CiscoStyleCli.py
+- your python class file
+#### 2.3.1.6. __init__.py
+- change it
+
+
+### 2.3.2. make package
 - ```
     cd package
     python3 -m pip install --upgrade setuptools wheel
@@ -377,7 +412,7 @@ FISH (Funny sImple distributed system with rSH through sSH)
     pypi's id and passwd
   ```
 
-### 2.3.2. test
+### 2.3.3. test
 - ```
     python3 -m pip install ciscostylecsc
     cd package
@@ -433,7 +468,7 @@ FISH (Funny sImple distributed system with rSH through sSH)
     (commands) list <CR> (commands) simple <CR>
   ```
 
-### 2.3.3. reference links
+### 2.3.4. reference links
 - https://valuefactory.tistory.com/565
 - https://stackoverflow.com/questions/52016336/how-to-upload-new-versions-of-project-to-pypi-with-twine
 - https://rampart81.github.io/post/python_package_publish/
