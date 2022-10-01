@@ -302,7 +302,7 @@ class CiscoStyleCli:
             returnable = ""
             desc = ""
             argumentType = None
-            if '__attribute' in v:
+            if v and '__attribute' in v:
                 if 'type' in v['__attribute']:
                     type = v['__attribute']['type']
                 if 'returnable' in v['__attribute']:
