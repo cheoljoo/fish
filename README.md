@@ -1,25 +1,41 @@
-
+- [1. fish](#1-fish)
+  - [1.1. main](#11-main)
+  - [1.2. RemoteCommand Class](#12-remotecommand-class)
+- [2. library](#2-library)
+  - [2.1. Cisco Style Cli](#21-cisco-style-cli)
+  - [2.2. CiscoStyleCli Class](#22-ciscostylecli-class)
+    - [2.2.1. document](#221-document)
+  - [2.3. make package and distribute python module](#23-make-package-and-distribute-python-module)
+    - [2.3.1. make package](#231-make-package)
+    - [2.3.2. test](#232-test)
+- [3. how to run](#3-how-to-run)
+  - [3.1. run (normal mode)](#31-run-normal-mode)
+  - [3.2. run (debug mode)](#32-run-debug-mode)
+  - [3.3. run (tiger command style)](#33-run-tiger-command-style)
+  - [3.4. run (infinite mode)](#34-run-infinite-mode)
+  - [3.5. others](#35-others)
+- [4. DESIGN](#4-design)
 
 --------
 
-# fish
+# 1. fish
 FISH (Funny sImple distributed system with rSH through sSH)
 
-## main
-    - use RemoteCommand Class to run remote works
-    - use CiscoStyleCli Class to get input
-    - set rules for Remotecommand
+## 1.1. main
+- use RemoteCommand Class to run remote works
+- use CiscoStyleCli Class to get input
+- set rules for Remotecommand
 
-## RemoteCommand Class
-    - add database for user and server
-    - input/output file
-        - fish.csv : user and server database
+## 1.2. RemoteCommand Class
+- add database for user and server
+- input/output file
+    - fish.csv : user and server database
 
-# library
-## Cisco Style Cli
+# 2. library
+## 2.1. Cisco Style Cli
 - Use pypi : https://pypi.org/project/ciscostylecli/
 
-## CiscoStyleCli Class
+## 2.2. CiscoStyleCli Class
 - structure
     - type : command (fixed value) or argument(variant value)
     - returnable : whether you can end or not although you strike the [return] key.
@@ -37,8 +53,9 @@ FISH (Funny sImple distributed system with rSH through sSH)
     - quit : quit from this program
 - you can not get out from this class when you meet the [returnable] or the end of command although you strke [return] key.
 - output file
-      - rulePrint.py : rule information
-### document
+    - rulePrint.py : rule information
+
+### 2.2.1. document
 - ```
     python3
     >> import CiscoStyleCli
@@ -46,376 +63,376 @@ FISH (Funny sImple distributed system with rSH through sSH)
   ```
 - ```python3 -m pydoc CiscoStyleCli > CiscoStyleCli.txt```
 
-```
-Help on module CiscoStyleCli:
+- ```
+    Help on module CiscoStyleCli:
 
-NAME
-    CiscoStyleCli
-
-CLASSES
-    builtins.object
+    NAME
         CiscoStyleCli
-    
-    class CiscoStyleCli(builtins.object)
-     |  CiscoStyleCli(rulePrintFile=None, infinite=False, prompt='FISH~~:', debug=False, isUseDefaultCommon=True)
-     |  
-     |  This Class runs function from command string
-     |  Cisco Style give the recommandation when you can use easily.
-     |  if you do not know what you do , press space or tab.
-     |  then CiscoStyleCli shows the recommendation with help description.
-     |  
-     |  1. interactive cisco command line interface
-     |  from CiscoStyleCli import CiscoStyleCli
-     |  csc = CiscoStyleCli.CiscoStyleCli()
-     |  csc.run()
-     |      - show the prompt to get your command (interactive mode)
-     |      - press enter key , this function will return
-     |  
-     |  2. endless interactive cisco command line interface
-     |  from CiscoStyleCli import CiscoStyleCli
-     |  csc = CiscoStyleCli.CiscoStyleCli(infinite=True)
-     |  csc.run() 
-     |      - it has infinite loop
-     |      - show the prompt to get your command (interactive mode)
-     |      - you can quit when you meet quit command or quit()
-     |  
-     |  3. non-interactive run command
-     |  from CiscoStyleCli import CiscoStyleCli
-     |  csc = CiscoStyleCli.CiscoStyleCli()
-     |  csc.runCommand(cmd)
-     |      - run your command (non-interactive mode)
-     |  
-     |  :param rulePrintFile: file name to print the tree
-     |  :param infinite: False (default) or True 
-     |          True if you want infinite loop. 
-     |          False if want to finish when you stroke 'return' key.
-     |  :param prompt: your prompt
-     |  :param debug: False (default) or True
-     |          True if you want to print more information
-     |  :param isUseDefaultCommon: True (default) or False
-     |          False if you want not to show message when self._common runs
-     |  
-     |  Methods defined here:
-     |  
-     |  __init__(self, rulePrintFile=None, infinite=False, prompt='FISH~~:', debug=False, isUseDefaultCommon=True)
-     |      initalize
-     |      it has only 2 commands : quit , list
-     |      
-     |      :param rulePrintFile: file name to print the tree
-     |      :param infinite: False (default) or True 
-     |              True if you want infinite loop. 
-     |              False if want to finish when you stroke 'return' key.
-     |      :param prompt: your prompt
-     |      :param debug: False (default) or True
-     |              True if you want to print more information
-     |      :param isUseDefaultCommon: True (default) or False
-     |              False if you want not to show message when self._common runs
-     |  
-     |  addArgument(self, root, name, type, returnable, desc, prefunc=None, returnfunc=None, additionalDict=None, additionalList=None)
-     |      add node (argument type) in tree
-     |      argument type means variable type. it is not fixed string. user should put the variant value.
-     |          - argument type : int
-     |          - argument type : str
-     |          - argument type : float
-     |          - argument type : [strA,strB,strC,...]  - list type : user can use one string in this list  (all are string)
-     |          - argument type : { key1:value1 , key2:value2 , ...} - dictionary type : user can use one key in this dictionary (all key and value are string)
-     |      
-     |      :command tree example:
-     |          gethost choose1 choose <CR>
-     |          gethost choose2 target <CR>
-     |          gethost choose3 shoot <CR>
-     |          quit <CR>
-     |          list <CR> detailed <CR>
-     |          list <CR> simple <CR>
-     |      
-     |      :code example:
-     |          from CiscoStyleCli import CiscoStyleCli
-     |          csc = CiscoStyleCli.CiscoStyleCli()
-     |          cmdTop = {}
-     |          gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
-     |          tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})        # level 2
-     |          tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})     # level 3
-     |          quitCmd = self.addCmd(cmdTop ,'quit','command',"returnable", "exit",returnfunc=self._quit)                                       # level 1
-     |          listCmd = self.addCmd(cmdTop ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)           # level 1
-     |          tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed) # level 2
-     |          tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)       # level 2
-     |          csc.setCliRule(cmdTop)
-     |      
-     |      :param root: parent node
-     |      :param name: argument name - retValue will have dictionary {name:value}
-     |      :param type: argument type - int , float , str , list , dict
-     |              when you use list and dict , it will give the recommendation with these list and dictionary contents (keys).
-     |      :param returnable: 'returnable' when we run something after strike 'return' key.  
-     |      :param desc: description
-     |      :param prefunc: function pointer - it will be run if your command meets this function.  show the example to understand easily
-     |      :param returnfunc: function pointer - it will be run when returnable == 'returnable' and you strike 'return' key.  default returnfunc=self._common
-     |              v : {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 2'}
-     |              v : {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
-     |      :param additionalDict: give this information to argument of prefunc and returnfunc. 
-     |              'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
-     |      :param additionalList: give this information to argument of prefunc and returnfunc. 
-     |              'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
-     |      :return: current node of tree
-     |  
-     |  addCmd(self, root, command, type, returnable, desc, prefunc=None, returnfunc=None, additionalDict=None, additionalList=None)
-     |      add node (command type) in tree
-     |      it is fixed string.
-     |      
-     |      :command tree example:
-     |          gethost choose1 choose <CR>
-     |          gethost choose2 target <CR>
-     |          gethost choose3 shoot <CR>
-     |          quit <CR>
-     |          list <CR> detailed <CR>
-     |          list <CR> simple <CR>
-     |      
-     |      :code example:
-     |          from CiscoStyleCli import CiscoStyleCli
-     |          csc = CiscoStyleCli.CiscoStyleCli()
-     |          cmdTop = {}
-     |          gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
-     |          tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})        # level 2
-     |          tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})     # level 3
-     |          quitCmd = self.addCmd(cmdTop ,'quit','command',"returnable", "exit",returnfunc=self._quit)                                       # level 1
-     |          listCmd = self.addCmd(cmdTop ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)           # level 1
-     |          tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed) # level 2
-     |          tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)       # level 2
-     |          csc.setCliRule(cmdTop)
-     |      
-     |      :param root: parent node
-     |      :param command: command name - retValue will have dictionary {name:value}
-     |      :param type: command
-     |      :param returnable: 'returnable' when we run something after strike 'return' key.  
-     |      :param desc: description
-     |      :param prefunc: function pointer - it will be run if your command meets this function.  show the example to understand easily
-     |      :param returnfunc: function pointer - it will be run when returnable == 'returnable' and you strike 'return' key.  default returnfunc=self._common
-     |              v : {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 2'}
-     |              v : {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
-     |      :param additionalDict: give this information to argument of prefunc and returnfunc. 
-     |              'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
-     |      :param additionalList: give this information to argument of prefunc and returnfunc. 
-     |              'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
-     |      :return: current node of tree
-     |  
-     |  checkCmd(self, cmd)
-     |      check whether this cmd is right and run registered function in prefunc and returnfunc arguments of addArgument() or addCmd()
-     |      return the location from rootCmd following cmd  for guiding current and next arguments
-     |      self.c : current input character
-     |      
-     |      flows
-     |          - while process each token (word) before last token (word)
-     |              move the next tree node each token
-     |              return current node if token has wrong input against tree
-     |          - process last token (word)
-     |              if input is return character,
-     |                  if returnable , run returnfunc
-     |              if input is space or tab character,
-     |                  find longestmatch
-     |          - return retValue
-     |      call function of prefunc and returnfunc
-     |          - prefunc and returnfunc has only one dictionary argument including all information
-     |      
-     |      :param cmd: input command line
-     |      :return root: node of tree for next argument.
-     |      :return lastWord: last stroke word
-     |      :return retValue: all your input information
-     |              example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
-     |      :return quoteflag: False or True according to the quotation counts
-     |      :return isFinishedFromReturn: False or True.   if it returns from input "return" , it is True.
-     |  
-     |  run(self)
-     |      main part of cisco command line interface
-     |      meet the prompt for your input
-     |      get string from your input
-     |      run() will have infinite loop before meeting quit() if you set infinite argument in __init__() as True.
-     |      :return: retValue with all your input information
-     |              example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
-     |  
-     |  runCommand(self, cmd)
-     |      non-interactive run command
-     |      
-     |      :param cmd: retValue with all your input information
-     |              example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
-     |  
-     |  setCliRule(self, rule)
-     |      set rule 
-     |      rule is generated from addCmd() and addArgument() functions.
-     |      finally it set the self._comon(v) when returnable is on or this is last token (word).
-     |        and it will add 'list' and 'quit' command automatically if you do not set it.
-     |      
-     |      :code example:
-     |          from CiscoStyleCli import CiscoStyleCli
-     |          csc = CiscoStyleCli.CiscoStyleCli()
-     |          remoteCmd = {}
-     |          gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
-     |          tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
-     |          tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
-     |          tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'animal'})
-     |          tmp = csc.addArgument(tmp,'target',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list")
-     |          tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'animal'})
-     |          tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary")
-     |          csc.setCliRule(remoteCmd)
-     |      
-     |      verification method: you can show the tree with the following command
-     |          list<CR>
-     |          list simple<CR>
-     |          list detailed<CR>
-     |          
-     |      Args:
-     |          rule (dict): rule dictionary tree made by addCmd() and addArgument()
-     |  
-     |  setCliRuleTcmd(self, top)
-     |      set rule for our tiger project (Tcmd : Tiger Command)
-     |      it has different sequence of dictionary tree.
-     |      finally it set the self._comon(v) when returnable is on or this is last token (word).
-     |        and it will add 'list' and 'quit' command automatically if you do not set it.
-     |      
-     |      :code example:
-     |          TOP = {}
-     |          projectList = ['tiger','cheetah','fish']
-     |          TOP ['register'] = {
-     |              '__attribute' : {
-     |                  'type' : "command",
-     |                  'desc' : "registration~~",
-     |                  'returnable' : "returnable"
-     |                  },
-     |              'name' : {
-     |                  '__attribute' : {
-     |                      'type' : "command",
-     |                      'desc' : "name~~",
-     |                      'returnable' : "",
-     |                  }
-     |              },
-     |              'target' : {
-     |                  'next-target' : {}
-     |              },
-     |              'target2' : {
-     |                  'next2-target' : {
-     |                      '__attribute' : {
-     |                          'desc' : "next target",
-     |                          'returnable' : "",
-     |                      }
-     |                  }
-     |              },
-     |              'vbee' : {
-     |                  'project' : {
-     |                      '__attribute' : {
-     |                          'desc' : "choose from list",
-     |                          'type' : 'argument',
-     |                          'argument-type' : projectList
-     |                      }
-     |                  }
-     |              }
-     |          }
-     |          csc.setCliRuleTcmd(TOP)
-     |      
-     |      if you do not '__attribute' , we will set as default
-     |          ['__attribute']['returnable'] = ""
-     |          ['__attribute']['type'] = 'command'
-     |          ['__attribute']['returnable'] = ""
-     |          ['__attribute']['desc'] = ""
-     |          ['__attribute']['argument-type'] = None
-     |          if you want to use dictionary or list , 
-     |              ['__attribute']['type'] = 'argument'
-     |              ['__attribute']['argument-type'] = one dimentional dictionary or list
-     |      
-     |      verification method: you can show the tree with the following command
-     |          list<CR>
-     |          list simple<CR>
-     |          list detailed<CR>
-     |      
-     |      Args:
-     |          top(dict) : rule dictionary tree with different type
-     |  
-```
-## make package and distribute python module
+
+    CLASSES
+        builtins.object
+            CiscoStyleCli
+        
+        class CiscoStyleCli(builtins.object)
+        |  CiscoStyleCli(rulePrintFile=None, infinite=False, prompt='FISH~~:', debug=False, isUseDefaultCommon=True)
+        |  
+        |  This Class runs function from command string
+        |  Cisco Style give the recommandation when you can use easily.
+        |  if you do not know what you do , press space or tab.
+        |  then CiscoStyleCli shows the recommendation with help description.
+        |  
+        |  1. interactive cisco command line interface
+        |  from CiscoStyleCli import CiscoStyleCli
+        |  csc = CiscoStyleCli.CiscoStyleCli()
+        |  csc.run()
+        |      - show the prompt to get your command (interactive mode)
+        |      - press enter key , this function will return
+        |  
+        |  2. endless interactive cisco command line interface
+        |  from CiscoStyleCli import CiscoStyleCli
+        |  csc = CiscoStyleCli.CiscoStyleCli(infinite=True)
+        |  csc.run() 
+        |      - it has infinite loop
+        |      - show the prompt to get your command (interactive mode)
+        |      - you can quit when you meet quit command or quit()
+        |  
+        |  3. non-interactive run command
+        |  from CiscoStyleCli import CiscoStyleCli
+        |  csc = CiscoStyleCli.CiscoStyleCli()
+        |  csc.runCommand(cmd)
+        |      - run your command (non-interactive mode)
+        |  
+        |  :param rulePrintFile: file name to print the tree
+        |  :param infinite: False (default) or True 
+        |          True if you want infinite loop. 
+        |          False if want to finish when you stroke 'return' key.
+        |  :param prompt: your prompt
+        |  :param debug: False (default) or True
+        |          True if you want to print more information
+        |  :param isUseDefaultCommon: True (default) or False
+        |          False if you want not to show message when self._common runs
+        |  
+        |  Methods defined here:
+        |  
+        |  __init__(self, rulePrintFile=None, infinite=False, prompt='FISH~~:', debug=False, isUseDefaultCommon=True)
+        |      initalize
+        |      it has only 2 commands : quit , list
+        |      
+        |      :param rulePrintFile: file name to print the tree
+        |      :param infinite: False (default) or True 
+        |              True if you want infinite loop. 
+        |              False if want to finish when you stroke 'return' key.
+        |      :param prompt: your prompt
+        |      :param debug: False (default) or True
+        |              True if you want to print more information
+        |      :param isUseDefaultCommon: True (default) or False
+        |              False if you want not to show message when self._common runs
+        |  
+        |  addArgument(self, root, name, type, returnable, desc, prefunc=None, returnfunc=None, additionalDict=None, additionalList=None)
+        |      add node (argument type) in tree
+        |      argument type means variable type. it is not fixed string. user should put the variant value.
+        |          - argument type : int
+        |          - argument type : str
+        |          - argument type : float
+        |          - argument type : [strA,strB,strC,...]  - list type : user can use one string in this list  (all are string)
+        |          - argument type : { key1:value1 , key2:value2 , ...} - dictionary type : user can use one key in this dictionary (all key and value are string)
+        |      
+        |      :command tree example:
+        |          gethost choose1 choose <CR>
+        |          gethost choose2 target <CR>
+        |          gethost choose3 shoot <CR>
+        |          quit <CR>
+        |          list <CR> detailed <CR>
+        |          list <CR> simple <CR>
+        |      
+        |      :code example:
+        |          from CiscoStyleCli import CiscoStyleCli
+        |          csc = CiscoStyleCli.CiscoStyleCli()
+        |          cmdTop = {}
+        |          gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
+        |          tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})        # level 2
+        |          tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})     # level 3
+        |          quitCmd = self.addCmd(cmdTop ,'quit','command',"returnable", "exit",returnfunc=self._quit)                                       # level 1
+        |          listCmd = self.addCmd(cmdTop ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)           # level 1
+        |          tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed) # level 2
+        |          tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)       # level 2
+        |          csc.setCliRule(cmdTop)
+        |      
+        |      :param root: parent node
+        |      :param name: argument name - retValue will have dictionary {name:value}
+        |      :param type: argument type - int , float , str , list , dict
+        |              when you use list and dict , it will give the recommendation with these list and dictionary contents (keys).
+        |      :param returnable: 'returnable' when we run something after strike 'return' key.  
+        |      :param desc: description
+        |      :param prefunc: function pointer - it will be run if your command meets this function.  show the example to understand easily
+        |      :param returnfunc: function pointer - it will be run when returnable == 'returnable' and you strike 'return' key.  default returnfunc=self._common
+        |              v : {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 2'}
+        |              v : {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        |      :param additionalDict: give this information to argument of prefunc and returnfunc. 
+        |              'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
+        |      :param additionalList: give this information to argument of prefunc and returnfunc. 
+        |              'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
+        |      :return: current node of tree
+        |  
+        |  addCmd(self, root, command, type, returnable, desc, prefunc=None, returnfunc=None, additionalDict=None, additionalList=None)
+        |      add node (command type) in tree
+        |      it is fixed string.
+        |      
+        |      :command tree example:
+        |          gethost choose1 choose <CR>
+        |          gethost choose2 target <CR>
+        |          gethost choose3 shoot <CR>
+        |          quit <CR>
+        |          list <CR> detailed <CR>
+        |          list <CR> simple <CR>
+        |      
+        |      :code example:
+        |          from CiscoStyleCli import CiscoStyleCli
+        |          csc = CiscoStyleCli.CiscoStyleCli()
+        |          cmdTop = {}
+        |          gethostCmd = csc.addCmd(cmdTop,'gethost','command',"", "gethosthelp")                                                            # level 1
+        |          tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})        # level 2
+        |          tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})     # level 3
+        |          quitCmd = self.addCmd(cmdTop ,'quit','command',"returnable", "exit",returnfunc=self._quit)                                       # level 1
+        |          listCmd = self.addCmd(cmdTop ,'list','command',"returnable", "show command line interface list",returnfunc=self._list)           # level 1
+        |          tmp = self.addCmd(listCmd ,'detailed','command',"returnable", "show detailed command line interface list",returnfunc=self._listDetailed) # level 2
+        |          tmp = self.addCmd(listCmd ,'simple','command',"returnable", "show simple command line interface list",returnfunc=self._listSimple)       # level 2
+        |          csc.setCliRule(cmdTop)
+        |      
+        |      :param root: parent node
+        |      :param command: command name - retValue will have dictionary {name:value}
+        |      :param type: command
+        |      :param returnable: 'returnable' when we run something after strike 'return' key.  
+        |      :param desc: description
+        |      :param prefunc: function pointer - it will be run if your command meets this function.  show the example to understand easily
+        |      :param returnfunc: function pointer - it will be run when returnable == 'returnable' and you strike 'return' key.  default returnfunc=self._common
+        |              v : {'__cmd__': ['gethost', 'choose3'], 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}, '__return__': 'gethost choose3 2'}
+        |              v : {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        |      :param additionalDict: give this information to argument of prefunc and returnfunc. 
+        |              'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
+        |      :param additionalList: give this information to argument of prefunc and returnfunc. 
+        |              'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
+        |      :return: current node of tree
+        |  
+        |  checkCmd(self, cmd)
+        |      check whether this cmd is right and run registered function in prefunc and returnfunc arguments of addArgument() or addCmd()
+        |      return the location from rootCmd following cmd  for guiding current and next arguments
+        |      self.c : current input character
+        |      
+        |      flows
+        |          - while process each token (word) before last token (word)
+        |              move the next tree node each token
+        |              return current node if token has wrong input against tree
+        |          - process last token (word)
+        |              if input is return character,
+        |                  if returnable , run returnfunc
+        |              if input is space or tab character,
+        |                  find longestmatch
+        |          - return retValue
+        |      call function of prefunc and returnfunc
+        |          - prefunc and returnfunc has only one dictionary argument including all information
+        |      
+        |      :param cmd: input command line
+        |      :return root: node of tree for next argument.
+        |      :return lastWord: last stroke word
+        |      :return retValue: all your input information
+        |              example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        |      :return quoteflag: False or True according to the quotation counts
+        |      :return isFinishedFromReturn: False or True.   if it returns from input "return" , it is True.
+        |  
+        |  run(self)
+        |      main part of cisco command line interface
+        |      meet the prompt for your input
+        |      get string from your input
+        |      run() will have infinite loop before meeting quit() if you set infinite argument in __init__() as True.
+        |      :return: retValue with all your input information
+        |              example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        |  
+        |  runCommand(self, cmd)
+        |      non-interactive run command
+        |      
+        |      :param cmd: retValue with all your input information
+        |              example) {'__cmd__': ['gethost', 'choose2'], 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}, '__return__': 'gethost choose2 tiger'}
+        |  
+        |  setCliRule(self, rule)
+        |      set rule 
+        |      rule is generated from addCmd() and addArgument() functions.
+        |      finally it set the self._comon(v) when returnable is on or this is last token (word).
+        |        and it will add 'list' and 'quit' command automatically if you do not set it.
+        |      
+        |      :code example:
+        |          from CiscoStyleCli import CiscoStyleCli
+        |          csc = CiscoStyleCli.CiscoStyleCli()
+        |          remoteCmd = {}
+        |          gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
+        |          tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
+        |          tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
+        |          tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'animal'})
+        |          tmp = csc.addArgument(tmp,'target',['cheetah','tiger','fish','turtle','tigiris'],"returnable", "type from the list")
+        |          tmp = csc.addCmd(gethostCmd,'choose3','command',"", "choose type3",additionalDict={'0':'tiger','1':'animal'})
+        |          tmp = csc.addArgument(tmp,'shoot',{'0':'car','1':'tiger','2':'telematics'},"returnable", "type key from the dictionary")
+        |          csc.setCliRule(remoteCmd)
+        |      
+        |      verification method: you can show the tree with the following command
+        |          list<CR>
+        |          list simple<CR>
+        |          list detailed<CR>
+        |          
+        |      Args:
+        |          rule (dict): rule dictionary tree made by addCmd() and addArgument()
+        |  
+        |  setCliRuleTcmd(self, top)
+        |      set rule for our tiger project (Tcmd : Tiger Command)
+        |      it has different sequence of dictionary tree.
+        |      finally it set the self._comon(v) when returnable is on or this is last token (word).
+        |        and it will add 'list' and 'quit' command automatically if you do not set it.
+        |      
+        |      :code example:
+        |          TOP = {}
+        |          projectList = ['tiger','cheetah','fish']
+        |          TOP ['register'] = {
+        |              '__attribute' : {
+        |                  'type' : "command",
+        |                  'desc' : "registration~~",
+        |                  'returnable' : "returnable"
+        |                  },
+        |              'name' : {
+        |                  '__attribute' : {
+        |                      'type' : "command",
+        |                      'desc' : "name~~",
+        |                      'returnable' : "",
+        |                  }
+        |              },
+        |              'target' : {
+        |                  'next-target' : {}
+        |              },
+        |              'target2' : {
+        |                  'next2-target' : {
+        |                      '__attribute' : {
+        |                          'desc' : "next target",
+        |                          'returnable' : "",
+        |                      }
+        |                  }
+        |              },
+        |              'vbee' : {
+        |                  'project' : {
+        |                      '__attribute' : {
+        |                          'desc' : "choose from list",
+        |                          'type' : 'argument',
+        |                          'argument-type' : projectList
+        |                      }
+        |                  }
+        |              }
+        |          }
+        |          csc.setCliRuleTcmd(TOP)
+        |      
+        |      if you do not '__attribute' , we will set as default
+        |          ['__attribute']['returnable'] = ""
+        |          ['__attribute']['type'] = 'command'
+        |          ['__attribute']['returnable'] = ""
+        |          ['__attribute']['desc'] = ""
+        |          ['__attribute']['argument-type'] = None
+        |          if you want to use dictionary or list , 
+        |              ['__attribute']['type'] = 'argument'
+        |              ['__attribute']['argument-type'] = one dimentional dictionary or list
+        |      
+        |      verification method: you can show the tree with the following command
+        |          list<CR>
+        |          list simple<CR>
+        |          list detailed<CR>
+        |      
+        |      Args:
+        |          top(dict) : rule dictionary tree with different type
+        |  
+  ```
+
+## 2.3. make package and distribute python module
 - https://valuefactory.tistory.com/565
 - https://stackoverflow.com/questions/52016336/how-to-upload-new-versions-of-project-to-pypi-with-twine
 - https://rampart81.github.io/post/python_package_publish/
 - https://jammdev.tistory.com/34
 - https://www.holaxprogramming.com/2017/06/28/python-project-structures/
 
-### make package
-```
-cd package
-python3 -m pip install --upgrade setuptools wheel
-python3 setup.py sdist bdist_wheel
-```
-- verify the result
-```txt
-package/dist  $  ls -l
-total 40
--rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
--rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
-```
-### upload package (distribution)
-```
-cd package
-python3 -m pip install --upgrade twine
-python3 -m twine upload --skip-existing dist/*
-pypi's id and passwd
-```
+### 2.3.1. make package
+- ```
+    cd package
+    python3 -m pip install --upgrade setuptools wheel
+    python3 setup.py sdist bdist_wheel
+    ```
+    - verify the result
+    ```txt
+    package/dist  $  ls -l
+    total 40
+    -rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
+    -rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
+  ```
+### 2.3.2. upload package (distribution)
+- ```
+    cd package
+    python3 -m pip install --upgrade twine
+    python3 -m twine upload --skip-existing dist/*
+    pypi's id and passwd
+  ```
 
-### test
-```
-python3 -m pip install ciscostylecsc
-cd package
-python3 test.py
-functionname: _list
- (commands) quit <CR>
- (commands) list <CR> (commands) detailed <CR>
- (commands) list <CR> (commands) simple <CR>
-
-
-    This Class runs function from command string
-    Cisco Style give the recommandation when you can use easily.
-    if you do not know what you do , press space or tab.
-    then CiscoStyleCli shows the recommendation with help description.
-
-    1. interactive cisco command line interface
-    csc = CiscoStyleCli()
-    csc.run()
-        - show the prompt to get your command (interactive mode)
-        - press enter key , this function will return
-
-    2. endless interactive cisco command line interface
-    csc = CiscoStyleCli(infinite=True)
-    csc.run()
-        - it has infinite loop
-        - show the prompt to get your command (interactive mode)
-        - you can quit when you meet quit command or quit()
-
-    3. non-interactive run command
-    csc = CiscoStyleCli()
-    csc.runCommand(cmd)
-        - run your command (non-interactive mode)
-
-    :param rulePrintFile: file name to print the tree
-    :param infinite: False (default) or True
-            True if you want infinite loop.
-            False if want to finish when you stroke 'return' key.
-    :param prompt: your prompt
-    :param debug: False (default) or True
-            True if you want to print more information
-    :param isUseDefaultCommon: True (default) or False
-            False if you want not to show message when self._common runs
+### 2.3.2. test
+- ```
+    python3 -m pip install ciscostylecsc
+    cd package
+    python3 test.py
+    functionname: _list
+    (commands) quit <CR>
+    (commands) list <CR> (commands) detailed <CR>
+    (commands) list <CR> (commands) simple <CR>
 
 
-recommend list: quit  list
-    -> (command) quit - exit [returnable]
-    -> (command) list - show command line interface list [returnable]
-FISH~~:list
-returnfunc <bound method CiscoStyleCli._list of <CiscoStyleCli.CiscoStyleCli.CiscoStyleCli object at 0x7faec8e8ccd0>>
-functionname: _list
- (commands) quit <CR>
- (commands) list <CR> (commands) detailed <CR>
- (commands) list <CR> (commands) simple <CR>
+        This Class runs function from command string
+        Cisco Style give the recommandation when you can use easily.
+        if you do not know what you do , press space or tab.
+        then CiscoStyleCli shows the recommendation with help description.
 
-```
+        1. interactive cisco command line interface
+        csc = CiscoStyleCli()
+        csc.run()
+            - show the prompt to get your command (interactive mode)
+            - press enter key , this function will return
+
+        2. endless interactive cisco command line interface
+        csc = CiscoStyleCli(infinite=True)
+        csc.run()
+            - it has infinite loop
+            - show the prompt to get your command (interactive mode)
+            - you can quit when you meet quit command or quit()
+
+        3. non-interactive run command
+        csc = CiscoStyleCli()
+        csc.runCommand(cmd)
+            - run your command (non-interactive mode)
+
+        :param rulePrintFile: file name to print the tree
+        :param infinite: False (default) or True
+                True if you want infinite loop.
+                False if want to finish when you stroke 'return' key.
+        :param prompt: your prompt
+        :param debug: False (default) or True
+                True if you want to print more information
+        :param isUseDefaultCommon: True (default) or False
+                False if you want not to show message when self._common runs
 
 
-# how to run
-## run (normal mode)
+    recommend list: quit  list
+        -> (command) quit - exit [returnable]
+        -> (command) list - show command line interface list [returnable]
+    FISH~~:list
+    returnfunc <bound method CiscoStyleCli._list of <CiscoStyleCli.CiscoStyleCli.CiscoStyleCli object at 0x7faec8e8ccd0>>
+    functionname: _list
+    (commands) quit <CR>
+    (commands) list <CR> (commands) detailed <CR>
+    (commands) list <CR> (commands) simple <CR>
+  ```
+
+
+# 3. how to run
+## 3.1. run (normal mode)
 - python3 fish.py
     - output
         - ```txt
@@ -470,16 +487,16 @@ functionname: _list
         - each item has each value as dictionary type.
     - ruleData.py : readable command line interface database
     - fish.csv : readable id_passwd table for each server
-## run (debug mode)
+## 3.2. run (debug mode)
 - python3 fish.py --debug
 
-## run (tiger command style)
+## 3.3. run (tiger command style)
 - python3 fish.py --prompt="TCMD>" --tcmd
 
-## run (infinite mode)
+## 3.4. run (infinite mode)
 - python3 fish.py --infinite
 
-## others
+## 3.5. others
 - make cpu
     - get cpu usage and disk storage status
 - make modified-file
@@ -497,7 +514,7 @@ functionname: _list
     - non-interactive mode (run once with your input command with return key)
 
 
-# DESIGN
+# 4. DESIGN
 - ssh
     - If a command is specified, it is executed on the remote host instead of a login shell.
 - rsh 
