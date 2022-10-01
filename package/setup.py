@@ -33,7 +33,7 @@ setup(name='ciscostylecli',
       author="charles.lee",
       author_email="cheoljoo@gmail.com",
       license='MIT',
-      url='https://github.com/cheoljoo/fish/package',
+      url='https://github.com/cheoljoo/fish/tree/main/package',
       classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

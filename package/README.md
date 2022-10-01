@@ -47,11 +47,11 @@ CiscoStyleCli(rulePrintFile=None, infinite=False, prompt='FISH~~:', debug=False,
         - False if you want not to show message when self._common runs
 
 - Sample Codes
-    - ![Basic Usage interactive test code](https://github.com/cheoljoo/fish/blob/main/package/test.py)
-    - ![Basic Usage debug test code](https://github.com/cheoljoo/fish/blob/main/package/debug.py)
-    - ![Basic Usage infinite loop interactive test code](https://github.com/cheoljoo/fish/blob/main/package/infinite.py)
-    - ![Basic Usage test code with tiger tree syntax](https://github.com/cheoljoo/fish/blob/main/package/tcmd.py)
-    - ![Basic Usage non-interactive (process command line with return) test code](https://github.com/cheoljoo/fish/blob/main/package/runCommand.py)
+    - [Basic Usage interactive test code](https://github.com/cheoljoo/fish/blob/main/package/test.py)
+    - [Basic Usage debug test code](https://github.com/cheoljoo/fish/blob/main/package/debug.py)
+    - [Basic Usage infinite loop interactive test code](https://github.com/cheoljoo/fish/blob/main/package/infinite.py)
+    - [Basic Usage test code with tiger tree syntax](https://github.com/cheoljoo/fish/blob/main/package/tcmd.py)
+    - [Basic Usage non-interactive (process command line with return) test code](https://github.com/cheoljoo/fish/blob/main/package/runCommand.py)
 
 ## interactive cisco command line interface
 ```python
