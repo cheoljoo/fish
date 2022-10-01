@@ -1,10 +1,10 @@
+
+
+--------
+
 # fish
 FISH (Funny sImple distributed system with rSH through sSH)
 
-# Cisco Style Cli
-- Use pypi : https://pypi.org/project/ciscostylecli/
-
-# Class
 ## main
     - use RemoteCommand Class to run remote works
     - use CiscoStyleCli Class to get input
@@ -14,6 +14,10 @@ FISH (Funny sImple distributed system with rSH through sSH)
     - add database for user and server
     - input/output file
         - fish.csv : user and server database
+
+# library
+## Cisco Style Cli
+- Use pypi : https://pypi.org/project/ciscostylecli/
 
 ## CiscoStyleCli Class
 - structure
@@ -324,6 +328,90 @@ CLASSES
      |          top(dict) : rule dictionary tree with different type
      |  
 ```
+## make package and distribute python module
+- https://valuefactory.tistory.com/565
+- https://stackoverflow.com/questions/52016336/how-to-upload-new-versions-of-project-to-pypi-with-twine
+- https://rampart81.github.io/post/python_package_publish/
+- https://jammdev.tistory.com/34
+- https://www.holaxprogramming.com/2017/06/28/python-project-structures/
+
+### make package
+```
+cd package
+python3 -m pip install --upgrade setuptools wheel
+python3 setup.py sdist bdist_wheel
+```
+- verify the result
+```txt
+package/dist  $  ls -l
+total 40
+-rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
+-rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
+```
+### upload package (distribution)
+```
+cd package
+python3 -m pip install --upgrade twine
+python3 -m twine upload --skip-existing dist/*
+pypi's id and passwd
+```
+
+### test
+```
+python3 -m pip install ciscostylecsc
+cd package
+python3 test.py
+functionname: _list
+ (commands) quit <CR>
+ (commands) list <CR> (commands) detailed <CR>
+ (commands) list <CR> (commands) simple <CR>
+
+
+    This Class runs function from command string
+    Cisco Style give the recommandation when you can use easily.
+    if you do not know what you do , press space or tab.
+    then CiscoStyleCli shows the recommendation with help description.
+
+    1. interactive cisco command line interface
+    csc = CiscoStyleCli()
+    csc.run()
+        - show the prompt to get your command (interactive mode)
+        - press enter key , this function will return
+
+    2. endless interactive cisco command line interface
+    csc = CiscoStyleCli(infinite=True)
+    csc.run()
+        - it has infinite loop
+        - show the prompt to get your command (interactive mode)
+        - you can quit when you meet quit command or quit()
+
+    3. non-interactive run command
+    csc = CiscoStyleCli()
+    csc.runCommand(cmd)
+        - run your command (non-interactive mode)
+
+    :param rulePrintFile: file name to print the tree
+    :param infinite: False (default) or True
+            True if you want infinite loop.
+            False if want to finish when you stroke 'return' key.
+    :param prompt: your prompt
+    :param debug: False (default) or True
+            True if you want to print more information
+    :param isUseDefaultCommon: True (default) or False
+            False if you want not to show message when self._common runs
+
+
+recommend list: quit  list
+    -> (command) quit - exit [returnable]
+    -> (command) list - show command line interface list [returnable]
+FISH~~:list
+returnfunc <bound method CiscoStyleCli._list of <CiscoStyleCli.CiscoStyleCli.CiscoStyleCli object at 0x7faec8e8ccd0>>
+functionname: _list
+ (commands) quit <CR>
+ (commands) list <CR> (commands) detailed <CR>
+ (commands) list <CR> (commands) simple <CR>
+
+```
 
 
 # how to run
@@ -492,87 +580,3 @@ CLASSES
 - checkStructure
     - check whether their input structure is right
 
-# make package and distribute python module
-- https://valuefactory.tistory.com/565
-- https://stackoverflow.com/questions/52016336/how-to-upload-new-versions-of-project-to-pypi-with-twine
-- https://rampart81.github.io/post/python_package_publish/
-- https://jammdev.tistory.com/34
-- https://www.holaxprogramming.com/2017/06/28/python-project-structures/
-
-## make package
-```
-cd package
-python3 -m pip install --upgrade setuptools wheel
-python3 setup.py sdist bdist_wheel
-```
-- verify the result
-```txt
-package/dist  $  ls -l
-total 40
--rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15326 Sep 30 23:04 ciscostylecli-1.0.0.0-py3-none-any.whl
--rw-rw-r-- 1 cheoljoo.lee cheoljoo.lee 15483 Sep 30 23:04 ciscostylecli-1.0.0.0.tar.gz
-```
-## upload package (distribution)
-```
-cd package
-python3 -m pip install --upgrade twine
-python3 -m twine upload --skip-existing dist/*
-pypi's id and passwd
-```
-
-## test
-```
-python3 -m pip install ciscostylecsc
-cd package
-python3 test.py
-functionname: _list
- (commands) quit <CR>
- (commands) list <CR> (commands) detailed <CR>
- (commands) list <CR> (commands) simple <CR>
-
-
-    This Class runs function from command string
-    Cisco Style give the recommandation when you can use easily.
-    if you do not know what you do , press space or tab.
-    then CiscoStyleCli shows the recommendation with help description.
-
-    1. interactive cisco command line interface
-    csc = CiscoStyleCli()
-    csc.run()
-        - show the prompt to get your command (interactive mode)
-        - press enter key , this function will return
-
-    2. endless interactive cisco command line interface
-    csc = CiscoStyleCli(infinite=True)
-    csc.run()
-        - it has infinite loop
-        - show the prompt to get your command (interactive mode)
-        - you can quit when you meet quit command or quit()
-
-    3. non-interactive run command
-    csc = CiscoStyleCli()
-    csc.runCommand(cmd)
-        - run your command (non-interactive mode)
-
-    :param rulePrintFile: file name to print the tree
-    :param infinite: False (default) or True
-            True if you want infinite loop.
-            False if want to finish when you stroke 'return' key.
-    :param prompt: your prompt
-    :param debug: False (default) or True
-            True if you want to print more information
-    :param isUseDefaultCommon: True (default) or False
-            False if you want not to show message when self._common runs
-
-
-recommend list: quit  list
-    -> (command) quit - exit [returnable]
-    -> (command) list - show command line interface list [returnable]
-FISH~~:list
-returnfunc <bound method CiscoStyleCli._list of <CiscoStyleCli.CiscoStyleCli.CiscoStyleCli object at 0x7faec8e8ccd0>>
-functionname: _list
- (commands) quit <CR>
- (commands) list <CR> (commands) detailed <CR>
- (commands) list <CR> (commands) simple <CR>
-
-```
