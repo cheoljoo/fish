@@ -315,7 +315,7 @@ class CiscoStyleCli:
                 tmpRoot = self.addArgument(root,k,argumentType,returnable,desc)
             else:
                 tmpRoot = self.addCmd(root,k,'command',returnable,desc)
-            if ('__attribute' in v and len(v) > 1) or ('__attribute' not in v and len(v) > 0):
+            if v and (('__attribute' in v and len(v) > 1) or ('__attribute' not in v and len(v) > 0)):
                 self._setCliRuleTcmdRecursive(tmpRoot,v)
             
     def setCliRuleTcmd(self,top):
@@ -638,7 +638,7 @@ class CiscoStyleCli:
                     cmdRoot[s]['prefunc'](retValue)
                 if self.debug:
                     print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                print('help: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
                 if cmdRoot[s]['type'] == 'argument' and 'argument-type' in cmdRoot[s] :
                     ld = cmdRoot[s]['argument-type']
                     if isinstance(ld,list) :

@@ -1,4 +1,5 @@
 import CiscoStyleCli
+import sys
 
 #print(help(CiscoStyleCli))
 
@@ -6,42 +7,82 @@ csc = CiscoStyleCli.CiscoStyleCli(prompt="TCMD>")
 #print(csc.__doc__)
 
 TOP = {}
-projectList = ['tiger','cheetah','fish']
-TOP ['register'] = {
+projectList = ['tiger_desktop_release' , 'bmw_icon_nad_release' , 'toyota_24dcm_release' , 'tiger_desktop_honda_release' , 'tiger_desktop_gen12_release']
+TOP ['src'] = {
     '__attribute' : {
-        'type' : "command",
-        'desc' : "registration~~",
-        'returnable' : "returnable"
+        'desc' : "get source code",
     },
-    'name' : {
+    'project' : {
         '__attribute' : {
-            'type' : "command",
-            'desc' : "name~~",
-            'returnable' : "",
+            'type' : "argument",
+            'desc' : "project name",
+            'argument-type': projectList,
+            'returnable' : "returnable",
+        },
+        'target' : {
+            '__attribute' : {
+                'type' : "argument",
+                'desc' : "target",
+                'argument-type': 'str',
+                'returnable' : "returnable",
+            },
         }
     },
-    'target' : {
-        'next-target' : {}
+}
+TOP ['run'] = {
+    '__attribute' : {
+        'desc' : "run",
     },
-    'target2' : {
-        'next2-target' : {
+    'desktop' : {
+        '__attribute' : {
+            'desc' : "desktop",
+        },
+        'committest' : {
             '__attribute' : {
-                'desc' : "next target",
-                'returnable' : "",
+                'desc' : "committest",
+                'type' : 'command',
+                'returnable' : "returnable",
+            }
+        }
+    }
+}
+TOP ['test'] = {
+    '__attribute' : {
+        'desc' : "build & test",
+    },
+    'daily' : {
+        '__attribute' : {
+            'desc' : "daily",
+        },
+        'project' : {
+            '__attribute' : {
+                'desc' : "project name",
+                'type' : 'argument',
+                'argument-type': projectList,
+                'returnable' : "returnable",
             }
         }
     },
-    'vbee' : {
+    'vt' : {
+        '__attribute' : {
+            'desc' : "vbee test",
+        },
         'project' : {
             '__attribute' : {
-                'desc' : "choose from list",
+                'desc' : "project name",
                 'type' : 'argument',
-                'argument-type' : projectList
+                'argument-type': projectList,
+                'returnable' : "returnable",
             }
         }
     }
 }
 csc.setCliRuleTcmd(TOP)
 
-csc.run()
+if len(sys.argv) > 1:
+    print("argv:",sys.argv)
+    x = ' '.join(sys.argv[1:])
+    csc.runCommand(x)
+else :
+    csc.run()
 
