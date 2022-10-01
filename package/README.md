@@ -310,5 +310,6 @@ setCliRuleTcmd(self, top)
     :param top: rule dictionary tree with different type
 ```
 
-
+# pypi
+- Use pypi : https://pypi.org/project/ciscostylecli/
 
