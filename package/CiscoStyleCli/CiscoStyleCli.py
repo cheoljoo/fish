@@ -302,6 +302,10 @@ class CiscoStyleCli:
             returnable = ""
             desc = ""
             argumentType = None
+            prefunc = None
+            returnfunc=None
+            additionalDict=None
+            additionalList=None
             if v and '__attribute' in v:
                 if 'type' in v['__attribute']:
                     type = v['__attribute']['type']
@@ -311,10 +315,19 @@ class CiscoStyleCli:
                     desc = v['__attribute']['desc']
                 if 'argument-type' in v['__attribute']:
                     argumentType = v['__attribute']['argument-type']
+                if 'prefunc' in v['__attribute']:
+                    prefunc = v['__attribute']['prefunc']
+                if 'returnfunc' in v['__attribute']:
+                    returnfunc = v['__attribute']['returnfunc']
+                if 'additionalDict' in v['__attribute']:
+                    additionalDict = v['__attribute']['additionalDict']
+                if 'additionalList' in v['__attribute']:
+                    additionalList = v['__attribute']['additionalList']
+                
             if type == 'argument':
-                tmpRoot = self.addArgument(root,k,argumentType,returnable,desc)
+                tmpRoot = self.addArgument(root,k,argumentType,returnable,desc,prefunc=prefunc,returnfunc=returnfunc,additionalDict=additionalDict,additionalList=additionalList)
             else:
-                tmpRoot = self.addCmd(root,k,'command',returnable,desc)
+                tmpRoot = self.addCmd(root,k,'command',returnable,desc,prefunc=prefunc,returnfunc=returnfunc,additionalDict=additionalDict,additionalList=additionalList)
             if v and (('__attribute' in v and len(v) > 1) or ('__attribute' not in v and len(v) > 0)):
                 self._setCliRuleTcmdRecursive(tmpRoot,v)
             

@@ -1,6 +1,14 @@
 import CiscoStyleCli
 import sys
 
+def runReturnFunc(v):
+    functionNameAsString = sys._getframe().f_code.co_name
+    print("This is common type of prefunc and returnfunc function argument.")
+    print("functionname:",functionNameAsString)
+    if v:
+        print("function argument: v :",v)
+    print('run your code with arbument v')
+
 #print(help(CiscoStyleCli))
 
 csc = CiscoStyleCli.CiscoStyleCli(prompt="TCMD:>")
@@ -25,6 +33,7 @@ TOP ['src'] = {
             'desc' : "project name",
             'argument-type': projectList,
             'returnable' : "returnable",
+            'returnfunc' : runReturnFunc,
         },
         'target' : {
             '__attribute' : {
@@ -32,6 +41,8 @@ TOP ['src'] = {
                 'desc' : "target",
                 'argument-type': 'str',
                 'returnable' : "returnable",
+                'additionalList' : projectList,
+                'additionalDict' : projectDict,
             },
         }
     },
@@ -80,6 +91,7 @@ TOP ['test'] = {
                 'type' : 'argument',
                 'argument-type': projectDict,
                 'returnable' : "returnable",
+                'returnfunc' : runReturnFunc,
             }
         }
     }
