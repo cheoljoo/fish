@@ -26,7 +26,7 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / 'README.md').read_text()
 
 setup(name='ciscostylecli',
-      version='1.0.1.1',
+      version='1.0.2.0',
       description='A Python package for command line interface like cisco',
       long_description = README,
       long_description_content_type = "text/markdown",
