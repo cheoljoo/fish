@@ -90,7 +90,8 @@ class CiscoStyleCli:
         self._checkReturnable(self.remoteCmd)
         if self.rulePrintFile:
             self._traverseFile(self.rulePrintFile,self.remoteCmd,"remoteCmd","w")
-        self._list()
+        if self.debug :
+            self._list()
         
     def addCmd(self,root,command,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None):
         """ 
@@ -396,7 +397,8 @@ class CiscoStyleCli:
             top(dict) : rule dictionary tree with different type
         """
         functionNameAsString = sys._getframe().f_code.co_name
-        print("functionname:",functionNameAsString)
+        if self.debug:
+            print("functionname:",functionNameAsString)
         self.remoteCmd = {}
         self._setCliRuleTcmdRecursive(self.remoteCmd,top)
         
@@ -404,7 +406,8 @@ class CiscoStyleCli:
         self._checkReturnable(self.remoteCmd)
         if self.rulePrintFile:
             self._traverseFile(self.rulePrintFile,self.remoteCmd,"remoteCmd","w")
-        self._listSimple()
+        if self.debug:
+            self._listSimple()
 
     def setCliRule(self,rule):
         """ 
@@ -659,7 +662,7 @@ class CiscoStyleCli:
                             print('    ->' + s)
                     elif isinstance(ld,dict):
                         for s in ld.keys():
-                            print('    ->' + str(s) + ' : ' + ld[s])
+                            print('    ->' + str(s) + '\t\t\t: ' + ld[s])
         # else :
         #     print(" this is leaf node")
     def _checkArgumentType(self,v,type):
@@ -843,7 +846,6 @@ class CiscoStyleCli:
                                         if self.debug:
                                             print('returnfunc',root['returnfunc'])
                                             print("retValue:",retValue)
-                                        print('returnfunc',root['returnfunc'])
                                         root['returnfunc'](retValue)
                                     self.cmd = ""
                                     if self.debug:

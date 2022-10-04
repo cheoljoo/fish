@@ -36,5 +36,21 @@ test-infinite:
 	python3 infinite.py
 
 test-runCommand:
+	@echo " python3 runCommand.py list"
 	python3 runCommand.py list
+	@echo " "
+	@echo " python3 runCommand.py list simple"
 	python3 runCommand.py list simple
+	@echo " "
+	@echo " python3 runCommand.py src bmw_icon_nad_release"
+	python3 runCommand.py src bmw_icon_nad_release 
+
+test-tcmd2:
+	@echo " python3 tcmd2.py list"
+	python3 tcmd2.py list
+	@echo " ===="
+	@echo " python3 tcmd2.py list simple"
+	python3 tcmd2.py list simple
+	@echo " ===="
+	@echo " python3 tcmd2.py src bmw_icon_nad_release"
+	python3 tcmd2.py src bmw_icon_nad_release 

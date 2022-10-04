@@ -3,11 +3,13 @@ import sys
 
 def runReturnFunc(v):
     functionNameAsString = sys._getframe().f_code.co_name
+    print("----")
     print("This is common type of prefunc and returnfunc function argument.")
     print("functionname:",functionNameAsString)
     if v:
         print("function argument: v :",v)
     print('run your code with arbument v')
+    print("----")
 
 #print(help(CiscoStyleCli))
 
