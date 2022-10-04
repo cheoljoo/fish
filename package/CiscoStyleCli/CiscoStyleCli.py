@@ -661,8 +661,11 @@ class CiscoStyleCli:
                         for s in ld:
                             print('    ->' + s)
                     elif isinstance(ld,dict):
+                        mx = 0
                         for s in ld.keys():
-                            print('    ->' + str(s) + '\t\t\t: ' + ld[s])
+                            mx = max(mx,len(s))
+                        for s in ld.keys():
+                            print('    ->' + str(s) + ' ' * (mx-len(s)) + '\t\t: ' + ld[s])
         # else :
         #     print(" this is leaf node")
     def _checkArgumentType(self,v,type):
