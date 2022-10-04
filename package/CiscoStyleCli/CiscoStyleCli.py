@@ -659,13 +659,13 @@ class CiscoStyleCli:
                     ld = cmdRoot[s]['argument-type']
                     if isinstance(ld,list) :
                         for s in ld:
-                            print('    ->' + s)
+                            print('    -> ' + s)
                     elif isinstance(ld,dict):
                         mx = 0
                         for s in ld.keys():
                             mx = max(mx,len(s))
                         for s in ld.keys():
-                            print('    ->' + str(s) + ' ' * (mx-len(s)) + '\t\t: ' + ld[s])
+                            print('    -> ' + str(s) + ' ' * (mx-len(s)) + '\t\t: ' + ld[s])
         # else :
         #     print(" this is leaf node")
     def _checkArgumentType(self,v,type):
