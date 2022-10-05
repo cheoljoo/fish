@@ -665,6 +665,8 @@ class CiscoStyleCli:
                             mx = max(mx,len(s))
                         for s in ld.keys():
                             print('    -> ' + str(s) + ' ' * (mx-len(s)) + '\t\t: ' + ld[s])
+                    else:
+                        print('    -> ' + '(' + t + ') ' + cmdRoot[s]['desc'])     
                 else:
                     print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
         # else :
@@ -815,8 +817,8 @@ class CiscoStyleCli:
                         if self.debug:
                             print("matched command:",retValue)
                         isFinishedFromReturn = True
-                        return (root,lastWord,retValue,False,isFinishedFromReturn)
-                # matched argument
+                    return (root,lastWord,retValue,False,isFinishedFromReturn)
+                # find matched argument
                 else : 
                     for crk, crv in cmdRoot.items():
                         if cmdRoot[crk]['type'] == 'argument':
@@ -858,7 +860,7 @@ class CiscoStyleCli:
                                     return (root,lastWord,retValue,False,isFinishedFromReturn)
 
 
-            # return : not matched returnable or space : recommendate next string
+            # not return or (return and not matched returnable) or space : recommendate next string
             if self.debug:
                 print("last not matched returnable v:",v,"root:",root)
             # if 'returnable' in root and root['returnable'] == 'returnable':
@@ -974,6 +976,18 @@ class CiscoStyleCli:
                         newCmd += v + " "
                         root = cmdRoot[focus]
                         retCmdList.append(v)  # command
+                        while True:
+                            if 'cmd' in root and len(root['cmd']) == 1:
+                                cmdRoot = root['cmd']
+                                autopick = list(cmdRoot.keys())[0]
+                                if 'type' in cmdRoot[autopick] and cmdRoot[autopick]['type'] == 'command':
+                                    newCmd += autopick + " "
+                                    root = cmdRoot[autopick]
+                                    retCmdList.append(autopick)
+                                else :
+                                    break
+                            else :
+                                break
                         retValue['__cmd__'] = retCmdList
                         retValue['__return__'] = newCmd.strip().replace('\t',' ')
                         quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
@@ -991,6 +1005,7 @@ class CiscoStyleCli:
                             return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                         elif len(matched) == 1:
                             focus = matched[0]
+                            # auto completion of part of command
                             newCmd += matched[0] + " "
                             root = cmdRoot[focus]
                             if 'type' in cmdRoot[focus] and cmdRoot[focus]['type'] == 'argument' :
@@ -1002,13 +1017,27 @@ class CiscoStyleCli:
                                 # retValue['__literal_cmd__'] = retLiteralCmdList
                             else:
                                 retCmdList.append(v)  # command
-                                retValue['__cmd__'] = retCmdList
                                 # if 'additionalList' in cmdRoot[focus]:
                                 #     retLiteralCmdList.append(v + ":" + cmdRoot[focus]['additionalList'][int(v)])
                                 # else : 
                                 #     retLiteralCmdList.append(v)
                                 # retValue['__literal_cmd__'] = retLiteralCmdList
+                                
+                            while True:
+                                if 'cmd' in root and len(root['cmd']) == 1:
+                                    cmdRoot = root['cmd']
+                                    autopick = list(cmdRoot.keys())[0]
+                                    if 'type' in cmdRoot[autopick] and cmdRoot[autopick]['type'] == 'command':
+                                        newCmd += autopick + " "
+                                        root = cmdRoot[autopick]
+                                        retCmdList.append(autopick)
+                                    else :
+                                        break
+                                else :
+                                    break
+                                
                             retValue[focus] = v
+                            retValue['__cmd__'] = retCmdList
                             retValue['__return__'] = newCmd.strip().replace('\t',' ')
                             quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                             self.cmd = newCmd

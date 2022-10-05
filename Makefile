@@ -54,3 +54,7 @@ test-tcmd2:
 	@echo " ===="
 	@echo " python3 tcmd2.py src bmw_icon_nad_release"
 	python3 tcmd2.py src bmw_icon_nad_release 
+
+test-tcmd3:
+	@echo " python3 tcmd3.py"
+	python3 tcmd3.py

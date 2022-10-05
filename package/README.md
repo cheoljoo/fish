@@ -313,3 +313,5 @@ setCliRuleTcmd(self, top)
 # pypi
 - Use pypi : https://pypi.org/project/ciscostylecli/
 
+- [work record - lang:korean](https://github.com/cheoljoo/fish/blob/main/msg.md)
+
