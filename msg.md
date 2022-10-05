@@ -110,3 +110,18 @@ python3 -m pip install --upgrade twine
 python3 -m twine upload --skip-existing dist/*
 pypi's id and passwd
 ```
+
+-----------------------
+# 2022.10.05 [221005/tcmd] apply it to tcmd (AutoTest_Cmd)
+
+- apply CiscoStyleCli to AutoTest_Cmd
+    - http://mod.lge.com/hub/seungdae.goh/AutoTest_Cmd.git
+- exmaple: tcmd3.py
+- bug fix -1 (line:820)
+    - test tt [enter]
+    - test tt tt [enter]
+- add function  (line:979)
+    - auto completion when next item is only one command
+- bug fix -2
+    - show the recommendation when i meet argument
+

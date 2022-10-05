@@ -13,7 +13,7 @@ def runReturnFunc(v):
 
 #print(help(CiscoStyleCli))
 
-csc = CiscoStyleCli.CiscoStyleCli(prompt="TCMD:>")
+csc = CiscoStyleCli.CiscoStyleCli(prompt="TCMD:>",infinite=True,debug=False)
 #print(csc.__doc__)
 
 TOP = {}
