@@ -17,7 +17,7 @@ csc = CiscoStyleCli.CiscoStyleCli(prompt="TCMD:>")
 #print(csc.__doc__)
 
 TOP = {}
-projectList = ['tiger_desktop_release' , 'bmw_icon_nad_release' , 'toyota_24dcm_release' , 'tiger_desktop_honda_release' , 'tiger_desktop_gen12_release']
+projectList = ['tiger_desktop_releaseL' , 'bmw_icon_nad_releaseL' , 'toyota_24dcm_releaseL' , 'tiger_desktop_honda_releaseL' , 'tiger_desktop_gen12_release']
 projectDict = {
     'tiger_desktop_release' : 'tiger release on x86',
     'bmw_icon_nad_release' : 'BMW iconnic sf24' , 
@@ -41,10 +41,8 @@ TOP ['src'] = {
             '__attribute' : {
                 'type' : "argument",
                 'desc' : "target",
-                'argument-type': 'str',
+                'argument-type': projectDict,
                 'returnable' : "returnable",
-                'additionalList' : projectList,
-                'additionalDict' : projectDict,
             },
         }
     },

@@ -654,7 +654,6 @@ class CiscoStyleCli:
                     cmdRoot[s]['prefunc'](retValue)
                 if self.debug:
                     print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
                 if cmdRoot[s]['type'] == 'argument' and 'argument-type' in cmdRoot[s] :
                     ld = cmdRoot[s]['argument-type']
                     if isinstance(ld,list) :
@@ -666,6 +665,8 @@ class CiscoStyleCli:
                             mx = max(mx,len(s))
                         for s in ld.keys():
                             print('    -> ' + str(s) + ' ' * (mx-len(s)) + '\t\t: ' + ld[s])
+                else:
+                    print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
         # else :
         #     print(" this is leaf node")
     def _checkArgumentType(self,v,type):
