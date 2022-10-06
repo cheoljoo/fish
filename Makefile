@@ -58,3 +58,7 @@ test-tcmd2:
 test-tcmd3:
 	@echo " python3 tcmd3.py"
 	python3 tcmd3.py
+
+doc:
+	@echo "python3 help.py > CiscoStyleCli.help.txt"
+	python3 help.py > CiscoStyleCli.help.txt

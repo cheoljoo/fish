@@ -125,3 +125,36 @@ pypi's id and passwd
 - bug fix -2
     - show the recommendation when i meet argument
 
+-----------------------
+# 2022.10.07 [221006/CiscoStyleCli_v1.0.4.0] support variable arguments
+
+- add new argument-type '...' : this is variable arguments.
+- ```
+            'endless' : {
+                '__attribute' : {
+                    'desc' : "multiple variant arguments",
+                    'type' : "argument",
+                    'argument-type': '...',
+                    'returnable' : "returnable",
+                },
+            },
+            ```
+
+- ```
+    $  python3 tcmd3.py list
+    argv: ['tcmd3.py', 'list']
+    functionname: _list
+     (commands) src (argument:['tiger_desktop_releaseL', 'bmw_icon_nad_releaseL', 'toyota_24dcm_releaseL', 'tiger_desktop_honda_releaseL', 'tiger_desktop_gen12_release']) project <CR> (argument:{'tiger_desktop_release': 'tiger release on x86', 'bmw_icon_nad_release': 'BMW iconnic sf24', 'toyota_24dcm_release': 'TOYOTA 24cy dcm', 'tiger_desktop_honda_release': 'HONDA 23MY', 'tiger_desktop_gen12_release': 'GM gen12'}) target <CR>
+     (commands) run (commands) desktop (commands) committest <CR> (argument:...) endless <CR>
+     (commands) quit <CR>
+     (commands) list <CR> (commands) detailed <CR>
+     (commands) list <CR> (commands) simple <CR>
+    
+    $  python3 tcmd3.py run desktop committest aa bb
+    argv: ['tcmd3.py', 'run', 'desktop', 'committest', 'aa', 'bb']
+    This is common type of prefunc and returnfunc function argument.
+    functionname: _common
+    function argument: v : {'__cmd__': ['run', 'desktop', 'committest'], 'endless': 'aa', '__return__': 'run desktop committest aa bb'}
+    Warning : set your returnfunc. this is templae function of prefunc and returnfunc argument.
+    ```
+

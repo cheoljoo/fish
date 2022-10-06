@@ -26,7 +26,7 @@ TOP ['src'] = {
                 'argument-type': 'str',
                 'returnable' : "returnable",
             },
-        }
+        },
     },
 }
 TOP ['run'] = {
@@ -44,7 +44,7 @@ TOP ['run'] = {
                 'returnable' : "returnable",
             }
         }
-    }
+    },
 }
 TOP ['test'] = {
     '__attribute' : {

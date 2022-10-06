@@ -371,9 +371,18 @@ class CiscoStyleCli:
                         '__attribute' : {
                             'desc' : "choose from list",
                             'type' : 'argument',
-                            'argument-type' : projectList
-                        }
-                    }
+                            'argument-type' : projectList,
+                            'returnable' : "returnable",
+                        },
+                        'endless' : {
+                            '__attribute' : {
+                                'desc' : "multiple variable arguments",
+                                'type' : "argument",
+                                'argument-type': '...',
+                                'returnable' : "returnable",
+                            },
+                        },
+                    },
                 }
             }
             csc.setCliRuleTcmd(TOP)
@@ -387,6 +396,9 @@ class CiscoStyleCli:
             if you want to use dictionary or list , 
                 ['__attribute']['type'] = 'argument'
                 ['__attribute']['argument-type'] = one dimentional dictionary or list
+            if you want to use variable arguments
+                ['__attribute']['type'] = 'argument'
+                ['__attribute']['argument-type'] = '...'
 
         verification method: you can show the tree with the following command
             list<CR>
@@ -421,6 +433,8 @@ class CiscoStyleCli:
             csc = CiscoStyleCli.CiscoStyleCli()
             remoteCmd = {}
             gethostCmd = csc.addCmd(remoteCmd,'gethost','command',"", "gethosthelp")
+            tmp = csc.addCmd(gethostCmd,'start','command',"", "start")
+            tmp = csc.addArgument(tmp,'variables','...',"returnable", "variable arguments")
             tmp = csc.addCmd(gethostCmd,'choose1','command',"", "choose type1",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
             tmp = csc.addArgument(tmp,'choose','int',"returnable", "type integer",prefunc=rc.showHost,additionalDict={'0':'tiger','1':'animal'})
             tmp = csc.addCmd(gethostCmd,'choose2','command',"", "choose type2",additionalDict={'0':'tiger','1':'animal'})
@@ -765,6 +779,34 @@ class CiscoStyleCli:
                                         retValue['__return__'] = self.cmd.strip().replace('\t',' ')
                                         self._copyAdditionalDictAndList(root,retValue)
                                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                                elif 'argument-type' in cmdRoot[crk] and cmdRoot[crk]['argument-type'] == '...':
+                                    if self.debug:
+                                        print('not last word v:',v,'words:',words,'newCmd:',newCmd)
+                                    self.cmd = newCmd + v + ' ' + str(' '.join(words)) + ' '
+                                    if self.c == '\n':
+                                        isFinishedFromReturn = True
+                                        retValue[crk] = v
+                                        retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                        if 'returnable' not in cmdRoot[crk]:
+                                            print('ERROR : returnable not in root')
+                                            quit(4)
+                                        if cmdRoot[crk]['returnable'] != 'returnable':
+                                            print('ERROR : not returnable')
+                                            quit(4)
+                                        if 'returnfunc' not in cmdRoot[crk]:
+                                            print('ERROR : returnfunc not in root')
+                                            quit(4)
+                                        if not cmdRoot[crk]['returnfunc']:
+                                            print('ERROR : not returnfunc')
+                                            quit(4)
+                                        cmdRoot[crk]['returnfunc'](retValue)
+                                        self.cmd = ""
+                                        return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                                    if self.debug:
+                                        print('show root:',root)
+                                    self._showRecommendation(root,retValue)
+                                    quoteFlag = self._changeQuoteFlag(quoteFlag,self.cmd)
+                                    return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                                 elif 'argument-type' in cmdRoot[crk]:
                                     if self._checkArgumentType(v,cmdRoot[crk]['argument-type']) == False:
                                         quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
@@ -828,6 +870,34 @@ class CiscoStyleCli:
                                 if v in cmdRoot[crk]['argument-type']:   # matched
                                     matchedFlag = True
                                     data = cmdRoot[crk]['argument-type']
+                            elif 'argument-type' in cmdRoot[crk] and cmdRoot[crk]['argument-type'] == '...':
+                                if self.debug:
+                                    print('last word v:',v,'words:',words,'newCmd:',newCmd)
+                                self.cmd = newCmd + v + ' ' + str(' '.join(words)) + ' '
+                                if self.c == '\n':
+                                    isFinishedFromReturn = True
+                                    retValue[crk] = v
+                                    retValue['__return__'] = self.cmd.strip().replace('\t',' ')
+                                    if 'returnable' not in cmdRoot[crk]:
+                                        print('ERROR : returnable not in root')
+                                        quit(4)
+                                    if cmdRoot[crk]['returnable'] != 'returnable':
+                                        print('ERROR : not returnable')
+                                        quit(4)
+                                    if 'returnfunc' not in cmdRoot[crk]:
+                                        print('ERROR : returnfunc not in root')
+                                        quit(4)
+                                    if not cmdRoot[crk]['returnfunc']:
+                                        print('ERROR : not returnfunc')
+                                        quit(4)
+                                    cmdRoot[crk]['returnfunc'](retValue)
+                                    self.cmd = ""
+                                    return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
+                                #if self.debug:
+                                #print('show 2 root:',root)
+                                #self._showRecommendation(root,retValue)
+                                #quoteFlag = self._changeQuoteFlag(quoteFlag,self.cmd)
+                                #return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                             elif 'argument-type' in cmdRoot[crk] and self._checkArgumentType(v,cmdRoot[crk]['argument-type']) == False:
                                 quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
                                 self.cmd = newCmd
@@ -950,6 +1020,15 @@ class CiscoStyleCli:
                                     return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                             else :
                                 data = cmdRoot[focus]['argument-type']
+                        elif 'argument-type' in cmdRoot[focus] and cmdRoot[focus]['argument-type'] == '...':
+                            if self.debug:
+                                print('show 2 root:',root)
+                            retValue['__return__'] = newCmd.strip().replace('\t',' ')
+                            quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
+                            self.cmd = newCmd
+                            self._showRecommendation(root,retValue)
+                            quoteFlag = self._changeQuoteFlag(quoteFlag,self.cmd)
+                            return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                         elif 'argument-type' in cmdRoot[focus]:
                             if self._checkArgumentType(v,cmdRoot[focus]['argument-type']) == False:
                                 quoteFlag = self._changeQuoteFlag(quoteFlag,oldCmd)
@@ -1095,6 +1174,11 @@ class CiscoStyleCli:
                     self._checkReturnable(rootCmd[k])
                 else:
                     rootCmd[k]['returnable'] = 'returnable'
+                if 'argument-type' in rootCmd[k] and rootCmd[k]['argument-type'] == '...':
+                    if 'cmd' in rootCmd[k]:
+                        print()
+                        print("ERROR : should not have 'cmd' if 'argument-type' is '...'")
+                        quit(4)
                 if 'returnable' in rootCmd[k] and rootCmd[k]['returnable'] == 'returnable':
                     if 'returnfunc' not in rootCmd[k] or not rootCmd[k]['returnfunc']:
                         rootCmd[k]['returnfunc'] = self._common
