@@ -1,4 +1,4 @@
-import CiscoStyleCli
+from CiscoStyleCli import CiscoStyleCli
 import sys
 
 def runReturnFunc(v):
