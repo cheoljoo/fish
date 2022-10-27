@@ -213,6 +213,10 @@ class RemoteCommand :
         rootPathFlag = False
         currentPathFlag = False
         filelist = []
+        newFileRe = re.compile('^\s*new file:\s+(?P<ans>.*)$')
+        modifiedRe = re.compile('^\s*modified:\s+(?P<ans>.*)$')
+        rootPathRe = re.compile('^===========>__<==ROOT')
+        currentPathRe = re.compile('^===========>__<==CURRENT')
         for l in lines:
             if rootPathRe.search(l):
                 grp = rootPathRe.search(l)
@@ -318,6 +322,10 @@ class RemoteCommand :
             rootPathFlag = False
             currentPathFlag = False
             filelist = []
+            newFileRe = re.compile('^\s*new file:\s+(?P<ans>.*)$')
+            modifiedRe = re.compile('^\s*modified:\s+(?P<ans>.*)$')
+            rootPathRe = re.compile('^===========>__<==ROOT')
+            currentPathRe = re.compile('^===========>__<==CURRENT')
             for l in lines:
                 if rootPathRe.search(l):
                     grp = rootPathRe.search(l)

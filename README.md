@@ -34,6 +34,8 @@
 
 # 1. fish
 FISH (Funny sImple distributed system with rSH through sSH)
+- Alaska Salmon
+- ![](https://www.google.com/url?sa=i&url=https%3A%2F%2Ffisheries.msc.org%2Fen%2Ffisheries%2Falaska-salmon%2F&psig=AOvVaw3je248ITGPJOF7muxjhWcN&ust=1666952993463000&source=images&cd=vfe&ved=0CA0QjRxqFwoTCMDq8_mZgPsCFQAAAAAdAAAAABAE)
 
 ## 1.1. main
 - use RemoteCommand Class to run remote works
