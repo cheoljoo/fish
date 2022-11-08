@@ -730,6 +730,7 @@ class CiscoStyleCli:
         retValue = {}
         retCmdList = []
         retLiteralCmdList = []
+        retValue['__origin_cmd__'] = cmd.strip().split(' ')
         words = cmd.strip().split(' ')
         quoteFlag = False
         isFinishedFromReturn = False
@@ -1051,11 +1052,17 @@ class CiscoStyleCli:
                         self._copyAdditionalDictAndList(root,retValue)
                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                 else: # command
+                    if self.debug:
+                        print("#command : focus:",focus,"len(matched):",len(matched), "root:",root)
                     if focus and len(matched) <= 1:  # matched only 1 command
                         newCmd += v + " "
                         root = cmdRoot[focus]
                         retCmdList.append(v)  # command
+                        if self.debug:
+                            print("#autopick1: root:",root)
                         while True:
+                            if root['returnable'] == 'returnable':
+                                break
                             if 'cmd' in root and len(root['cmd']) == 1:
                                 cmdRoot = root['cmd']
                                 autopick = list(cmdRoot.keys())[0]
@@ -1102,7 +1109,11 @@ class CiscoStyleCli:
                                 #     retLiteralCmdList.append(v)
                                 # retValue['__literal_cmd__'] = retLiteralCmdList
                                 
+                            if self.debug:
+                                print("#autopick2 : root:",root)
                             while True:
+                                if root['returnable'] == 'returnable':
+                                    break
                                 if 'cmd' in root and len(root['cmd']) == 1:
                                     cmdRoot = root['cmd']
                                     autopick = list(cmdRoot.keys())[0]
