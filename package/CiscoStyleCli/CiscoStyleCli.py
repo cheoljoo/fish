@@ -682,7 +682,8 @@ class CiscoStyleCli:
                     else:
                         print('    -> ' + '(' + t + ') ' + cmdRoot[s]['desc'])     
                 else:
-                    print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                    # print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                    print('    -> ' , s , '    - ({})'.format(t) , ":" , cmdRoot[s]['desc'] ,returnable , flush=True)
         # else :
         #     print(" this is leaf node")
     def _checkArgumentType(self,v,type):
@@ -1167,7 +1168,8 @@ class CiscoStyleCli:
                                     returnable = '[returnable]'
                                 if self.debug:
                                     print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                                print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                                # print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                                print('    -> ' , s , '    - ({})'.format(t) , ":" , cmdRoot[s]['desc'] ,returnable , flush=True)
                             self._copyAdditionalDictAndList(root,retValue)
                             return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
         else :  # cmd == "" 인 경우
