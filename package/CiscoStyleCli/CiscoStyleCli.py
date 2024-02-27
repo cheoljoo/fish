@@ -179,7 +179,7 @@ class CiscoStyleCli:
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
             quit()
         return root['cmd'][command]
-    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None):
+    def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None,default=None):
         """ 
         add node (argument type) in tree
         argument type means variable type. it is not fixed string. user should put the variant value.
@@ -224,6 +224,8 @@ class CiscoStyleCli:
                 'shoot': {'choice': '2', 'data': {'0': 'car', '1': 'tiger', '2': 'telematics'}}
         :param additionalList: give this information to argument of prefunc and returnfunc. 
                 'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris']}
+        :param default: give default value when arguement type is list or dict.
+                'target': {'choice': 'tiger', 'data': ['cheetah', 'tiger', 'fish', 'turtle', 'tigiris'] , 'default':'fish'}
         :return: current node of tree
         """
         functionNameAsString = sys._getframe().f_code.co_name
@@ -253,6 +255,8 @@ class CiscoStyleCli:
             root['cmd'][name]['returnfunc'] = returnfunc
         if additionalList:
             root['cmd'][name]['additionalList'] = additionalList
+        if default:
+            root['cmd'][name]['default'] = default
         # check the rule : 1 arugment or all commands
         argumentTypeCount = 0
         commandTypeCount = 0
@@ -307,6 +311,7 @@ class CiscoStyleCli:
             returnfunc=None
             additionalDict=None
             additionalList=None
+            default=None
             if v and '__attribute' in v:
                 if 'type' in v['__attribute']:
                     type = v['__attribute']['type']
@@ -324,9 +329,11 @@ class CiscoStyleCli:
                     additionalDict = v['__attribute']['additionalDict']
                 if 'additionalList' in v['__attribute']:
                     additionalList = v['__attribute']['additionalList']
+                if 'default' in v['__attribute']:
+                    default = v['__attribute']['default']
                 
             if type == 'argument':
-                tmpRoot = self.addArgument(root,k,argumentType,returnable,desc,prefunc=prefunc,returnfunc=returnfunc,additionalDict=additionalDict,additionalList=additionalList)
+                tmpRoot = self.addArgument(root,k,argumentType,returnable,desc,prefunc=prefunc,returnfunc=returnfunc,additionalDict=additionalDict,additionalList=additionalList,default=default)
             else:
                 tmpRoot = self.addCmd(root,k,'command',returnable,desc,prefunc=prefunc,returnfunc=returnfunc,additionalDict=additionalDict,additionalList=additionalList)
             if v and (('__attribute' in v and len(v) > 1) or ('__attribute' not in v and len(v) > 0)):
@@ -671,19 +678,27 @@ class CiscoStyleCli:
                 if cmdRoot[s]['type'] == 'argument' and 'argument-type' in cmdRoot[s] :
                     ld = cmdRoot[s]['argument-type']
                     if isinstance(ld,list) :
-                        for s in ld:
-                            print('    -> ' + s)
+                        for ele in ld:
+                            tmp = ''
+                            tmp += '    -> ' + ele
+                             #tmp += cmdRoot[s].get('default','^TT^')
+                            tmp += ' (default)' if(returnable and cmdRoot[s].get('default','') == ele) else ''
+                            print(tmp,flush=True)
+                             #print(cmdRoot[s])
                     elif isinstance(ld,dict):
                         mx = 0
-                        for s in ld.keys():
-                            mx = max(mx,len(s))
-                        for s in ld.keys():
-                            print('    -> ' + str(s) + ' ' * (mx-len(s)) + '\t\t: ' + ld[s])
+                        for key2 in ld.keys():
+                            mx = max(mx,len(key2))
+                        for key2 in ld.keys():
+                            tmp = ''
+                            tmp += '    -> ' + str(key2) + ' ' * (mx-len(key2)) + '\t\t: ' + ld[key2]
+                            tmp += ' (default)' if(returnable and cmdRoot[s].get('default','') == key2) else ''
+                            print(tmp,flush=True)
                     else:
                         print('    -> ' + '(' + t + ') ' + cmdRoot[s]['desc'])     
                 else:
                     # print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                    print('    -> ' , s , '    - ({})'.format(t) , ":" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                    print('    -> ' , s , '    ({})'.format(t) , ":" , cmdRoot[s]['desc'] ,returnable , flush=True)
         # else :
         #     print(" this is leaf node")
     def _checkArgumentType(self,v,type):
@@ -817,7 +832,10 @@ class CiscoStyleCli:
                                         self._copyAdditionalDictAndList(root,retValue)
                                         return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
                                 if data:
-                                    retValue[crk] = { 'choice':v , 'data':data }
+                                    if cmdRoot[crk].get('default',''):
+                                        retValue[crk] = { 'choice':v , 'data':data , 'default':cmdRoot[crk].get('default','')}
+                                    else:
+                                        retValue[crk] = { 'choice':v , 'data':data }
                                 else : 
                                     retValue[crk] = v
                                 root = cmdRoot[crk]
@@ -1000,7 +1018,10 @@ class CiscoStyleCli:
                                     print("help list :",flush=True)
                                     for s in cmdRoot[focus]['argument-type']:
                                         if longestMatch == s[:len(longestMatch)]:
-                                            print('    ->',s , flush=True)
+                                            tmp = ''
+                                            tmp += '    -> '+s
+                                            tmp += ' (default)' if cmdRoot[focus].get('default','') == s else ''
+                                            print(tmp, flush=True)
                                     # print('choose one from upper list.')
                                     retValue['__return__'] = newCmd.strip().replace('\t',' ')
                                     quoteFlag = self._changeQuoteFlag(quoteFlag,newCmd)
@@ -1169,7 +1190,7 @@ class CiscoStyleCli:
                                 if self.debug:
                                     print('recommend: ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
                                 # print('    -> ({})'.format(t) , s , "-" , cmdRoot[s]['desc'] ,returnable , flush=True)
-                                print('    -> ' , s , '    - ({})'.format(t) , ":" , cmdRoot[s]['desc'] ,returnable , flush=True)
+                                print('    -> ' , s , '    ({})'.format(t) , ":" , cmdRoot[s]['desc'] ,returnable , flush=True)
                             self._copyAdditionalDictAndList(root,retValue)
                             return (root,lastWord,retValue,quoteFlag,isFinishedFromReturn)
         else :  # cmd == "" 인 경우

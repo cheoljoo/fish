@@ -34,6 +34,7 @@ TOP ['src'] = {
             'type' : "argument",
             'desc' : "project name",
             'argument-type': projectList,
+            'default': 'bmw_icon_nad_releaseL',
             'returnable' : "returnable",
             'returnfunc' : runReturnFunc,
         },
@@ -42,6 +43,7 @@ TOP ['src'] = {
                 'type' : "argument",
                 'desc' : "target",
                 'argument-type': projectDict,
+                'default': 'bmw_icon_nad_release',
                 'returnable' : "returnable",
             },
         }
