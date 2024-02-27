@@ -1,3 +1,6 @@
+- change version
+    - package/setup.py:      version='1.0.4.0'
+
 ### 2.3.2. make package
 - ```
     cd package

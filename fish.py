@@ -489,7 +489,8 @@ if (__name__ == "__main__"):
                     '__attribute' : {
                         'desc' : "choose from list",
                         'type' : 'argument',
-                        'argument-type' : projectList
+                        'argument-type' : projectList,
+                        'default':'tiger',
                     }
                 }
             }
