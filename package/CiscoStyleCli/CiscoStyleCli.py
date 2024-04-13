@@ -157,26 +157,29 @@ class CiscoStyleCli:
         commandTypeCount = 0
         anotherTypeCount = 0
         for cmd in root['cmd']:
-            if root['cmd'][command]['type'] == 'argument':
+            if root['cmd'][cmd]['type'] == 'argument':
                 argumentTypeCount += 1
-            elif root['cmd'][command]['type'] == 'command':
+            elif root['cmd'][cmd]['type'] == 'command':
                 commandTypeCount += 1
             else:
                 anotherTypeCount += 1
         if argumentTypeCount > 1 :
             print("functionname:",functionNameAsString, locals())
-            print("ERROR: you should have just 1 argument command type or multiple commands")
+            print("ERROR: (1) you should have just 1 argument command type or multiple commands")
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
+            print(root['cmd'])
             quit()
         elif argumentTypeCount == 1 and commandTypeCount > 0:
             print("functionname:",functionNameAsString, locals())
-            print("ERROR: you should have just 1 argument.  you should not have any commands type")
+            print("ERROR: (1) you should have just 1 argument.  you should not have any commands type")
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
+            print(root['cmd'])
             quit()
         elif anotherTypeCount > 0 :
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have the following type : argument or command")
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
+            print(root['cmd'])
             quit()
         return root['cmd'][command]
     def addArgument(self,root,name,type,returnable,desc,prefunc=None,returnfunc=None,additionalDict=None,additionalList=None,default=None):
@@ -262,26 +265,30 @@ class CiscoStyleCli:
         commandTypeCount = 0
         anotherTypeCount = 0
         for cmd in root['cmd']:
-            if root['cmd'][name]['type'] == 'argument':
+             #print('cmd:',cmd , 'name:',name)
+            if root['cmd'][cmd]['type'] == 'argument':
                 argumentTypeCount += 1
-            elif root['cmd'][name]['type'] == 'command':
+            elif root['cmd'][cmd]['type'] == 'command':
                 commandTypeCount += 1
             else:
                 anotherTypeCount += 1
         if argumentTypeCount > 1 :
             print("functionname:",functionNameAsString, locals())
-            print("ERROR: you should have just 1 argument command type or multiple commands")
+            print("ERROR: (2)  you should have just 1 argument command type or multiple commands")
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
+            print(root['cmd'])
             quit()
         elif argumentTypeCount == 1 and commandTypeCount > 0:
             print("functionname:",functionNameAsString, locals())
-            print("ERROR: you should have just 1 argument.  you should not have any commands type")
+            print("ERROR: (2) you should have just 1 argument.  you should not have any commands type")
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
+            print(root['cmd'])
             quit()
         elif anotherTypeCount > 0 :
             print("functionname:",functionNameAsString, locals())
             print("ERROR: you should have the following type : argument or command")
             print("    your result : argument#:",argumentTypeCount , "command#:",commandTypeCount,"others#:",anotherTypeCount)
+            print(root['cmd'])
             quit()
         return root['cmd'][name]
     
